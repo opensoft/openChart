@@ -31,3 +31,7 @@ pin:
     source_path: examples/one-patient/golden/30-identity/binding-03-openchart.yaml
     sha256: 576d2e406fdb75247f389ec14c50f74c601fc24079c4e97caf12b20c332aaec2
     source_sha256: 213f2447310f5076795e09c9ba04d8f6c5d6e70700d840d1b9f6303d7bdbc777
+  - vendored_path: tests/fixtures/medx/scenario-intake-supplements-successor.yaml
+    sha256: "f170d2f8f893099a6440c33b975c24974e6870171ae17b2bb815688135e74457"
+    source_path: examples/one-patient-scenario/add-supplement/20-intake-raw-successor/intake-supplements-successor.yaml
+    source_sha256: "173f4b11193dc502d0178b8b73d6bbe1c0b35e7ba7478f45a4ece7219f349214"

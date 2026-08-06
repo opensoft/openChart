@@ -1,0 +1,56 @@
+# VENDORED from MedxFactory (scenario s1 corpus, main @ df859fb0cf3c) — source path: examples/one-patient-scenario/add-supplement/20-intake-raw-successor/intake-supplements-successor.yaml
+# The golden patient's UPDATED supplement submission (melatonin added;
+# prior entry verbatim; source_record_version 2) — the p4 live-half
+# fixture named by scenario report SYN-SCENARIO-REPORT-0001's claim
+# boundary. The drift check pins this file's digest in
+# contracts/medx-pin.yaml. Never edit by hand; re-vendor deliberately.
+# FICTIONAL EXAMPLE — patient-reported supplements (scenario successor).
+# The UPDATED supplement submission (feature 006, ruling Q6): the same
+# source record SYN-INTAKE-SUP-0001 at version 2 — the patient re-submits
+# the full supplement list, now including melatonin. The prior St John's
+# Wort entry is UNCHANGED; the addition is the scenario's whole delta
+# (DISC-S1). Like DISC-02, the claim is only that the unreported
+# supplement must reach a clinician as a reviewable item: no interaction,
+# severity, or recommendation is stated.
+# The p2 successor run scenario (runs/08-successor-add-supplement)
+# produces EXACTLY this document in memory via its declared mutations;
+# the scenario harness asserts that equivalence so this file and the
+# executed mutation can never drift.
+bundle_version: 1.4.0
+envelope:
+  content:
+    entries:
+    - adherence_reported: takes_most_days
+      code:
+        code: SYN-SUP-ST-JOHNS-WORT
+        display: St John's Wort
+        system: SYN-ILLUSTRATIVE-SUP
+      confidence_reported: medium
+      dose_amount: 300
+      dose_unit: mg
+      entry_id: SYN-INTAKE-SUPLINE-0001
+      formulation: capsule
+      frequency: three_times_daily
+      indication_reported: low_mood
+      reported_text: St John's Wort capsule, 300 mg three times a day
+    - entry_id: SYN-INTAKE-SUPLINE-0002
+      reported_text: melatonin 3 mg tablet before bed
+      code:
+        system: SYN-ILLUSTRATIVE-SUP
+        code: SYN-SUP-MELATONIN
+        display: melatonin
+      dose_amount: 3
+      dose_unit: mg
+      frequency: once_nightly
+      formulation: tablet
+      indication_reported: sleep
+      adherence_reported: takes_as_described
+      confidence_reported: high
+  record_family: supplement
+  reported_at: '2026-08-06T09:00:00Z'
+  source_record_id: SYN-INTAKE-SUP-0001
+  source_record_version: '2'
+  source_system: openchart_expanded_intake
+kind: medx_scenario_raw_intake_envelope
+schema_version: 1
+synthetic: true
