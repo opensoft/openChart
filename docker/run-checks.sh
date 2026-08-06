@@ -50,6 +50,9 @@ step "get + install open_chart (standalone; no Medx app anywhere)"
 cp -a "$APP_SRC" ./apps/open_chart || fail "copy app"
 rm -rf ./apps/open_chart/.git
 ./env/bin/pip install --quiet -e ./apps/open_chart || fail "pip install app"
+# apps.txt may lack a trailing newline; a bare append would fuse
+# "frappe" + "open_chart" into one unloadable module name
+[ -s ./sites/apps.txt ] && [ -n "$(tail -c1 ./sites/apps.txt)" ] && echo >> ./sites/apps.txt
 grep -qx "open_chart" ./sites/apps.txt 2>/dev/null || echo "open_chart" >> ./sites/apps.txt
 bench --site "$SITE" install-app open_chart || fail "install-app"
 
@@ -57,7 +60,16 @@ step "migrate"
 bench --site "$SITE" migrate || fail "migrate"
 
 step "app test suite"
-bench --site "$SITE" run-tests --app open_chart || fail "run-tests"
+# run-tests exits ZERO when site testing is disabled ("Testing is
+# disabled for the site!") — a zero-test pass proves nothing, so enable
+# tests explicitly AND refuse any run that does not show tests executed.
+bench --site "$SITE" set-config allow_tests true || fail "enable tests"
+TEST_OUT=$(bench --site "$SITE" run-tests --app open_chart 2>&1)
+TEST_STATUS=$?
+echo "$TEST_OUT"
+[ "$TEST_STATUS" -eq 0 ] || fail "run-tests"
+echo "$TEST_OUT" | grep -qE "Ran [1-9][0-9]* test" \
+  || fail "zero tests ran (a suite that runs nothing proves nothing)"
 
 echo
 echo "OC-DOCKER-RESULT: PASS (install, migrate, tests on the pinned matrix)"
