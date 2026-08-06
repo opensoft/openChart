@@ -42,7 +42,6 @@ FAILURE_ROOT = FIXTURE_ROOT / "failure"
 FINDING_PIN_DRIFT = "OC-PIN-DRIFT"
 FINDING_CENSUS_GAP = "OC-CENSUS-GAP"
 FINDING_DOCTYPE_SHAPE = "OC-DOCTYPE-SHAPE"
-FINDING_ROUNDTRIP_LOSS = "OC-ROUNDTRIP-LOSS"
 FINDING_FIXTURE_SAFETY = "OC-FIXTURE-SAFETY"
 
 RESULT_CLASSES = (
@@ -54,8 +53,9 @@ RESULT_CLASSES = (
     "idempotency_divergence",
 )
 
-#: Negative-corpus ratchet; T013 sets the final value.
-NEGATIVE_RATCHET = 0
+#: Negative-corpus ratchet (T013 final): one fixture per RESULT_CLASS.
+#: The corpus only grows deliberately; the harness refuses any other count.
+NEGATIVE_RATCHET = 6
 
 
 def finding(rel, message: str) -> str:

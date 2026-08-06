@@ -1,0 +1,16 @@
+# Negative fixture (T012): identity_conflict — must fire identity_review.
+schema_version: 1
+kind: oc_negative_fixture
+synthetic: true
+class: identity_conflict
+arm: identity_decision
+expect: identity_review
+inputs:
+  existing:
+  - patient: SYN-PAT-A
+    issuer_or_endpoint: SYN-ISSUER-QA
+    value: SYN-EXT-DUP-01
+    status: active
+  patient: SYN-PAT-B
+  issuer_or_endpoint: SYN-ISSUER-QA
+  value: SYN-EXT-DUP-01

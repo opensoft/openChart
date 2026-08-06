@@ -8,6 +8,7 @@
 
 validate:
 	python3 scripts/validate.py
+	python3 scripts/harness.py
 
 validate-docker:
 	docker compose -f docker/compose.yaml up \

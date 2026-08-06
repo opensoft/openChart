@@ -1,0 +1,120 @@
+# Negative fixture (T012): doctype_shape — must fire OC-DOCTYPE-SHAPE.
+schema_version: 1
+kind: oc_negative_fixture
+synthetic: true
+class: doctype_shape
+arm: validate
+expect: OC-DOCTYPE-SHAPE
+overlay:
+  - path: open_chart/open_chart/doctype/oc_goal_statement/oc_goal_statement.json
+    content: |
+      {
+       "doctype": "DocType",
+       "name": "OC Goal Statement",
+       "module": "Wrong Module",
+       "custom": 0,
+       "engine": "InnoDB",
+       "naming_rule": "Expression",
+       "autoname": "format:OC-GOALST-{#####}",
+       "field_order": [
+        "patient",
+        "submission",
+        "assertion_kind",
+        "source_entry_id",
+        "reported_text",
+        "verification_state",
+        "predecessor",
+        "amendment_reason",
+        "goal_reported",
+        "target_reported",
+        "timeframe_reported",
+        "confidence_reported"
+       ],
+       "fields": [
+        {
+         "fieldname": "patient",
+         "fieldtype": "Link",
+         "label": "Patient",
+         "options": "OC Patient",
+         "reqd": 1
+        },
+        {
+         "fieldname": "submission",
+         "fieldtype": "Link",
+         "label": "Submission",
+         "options": "OC Intake Submission",
+         "reqd": 1
+        },
+        {
+         "fieldname": "assertion_kind",
+         "fieldtype": "Data",
+         "label": "Assertion Kind",
+         "reqd": 1,
+         "default": "patient_reported",
+         "read_only": 1
+        },
+        {
+         "fieldname": "source_entry_id",
+         "fieldtype": "Data",
+         "label": "Source Entry Id",
+         "reqd": 1
+        },
+        {
+         "fieldname": "reported_text",
+         "fieldtype": "Small Text",
+         "label": "Reported Text",
+         "reqd": 1
+        },
+        {
+         "fieldname": "verification_state",
+         "fieldtype": "Select",
+         "label": "Verification State",
+         "options": "patient_reported\nclinician_verified",
+         "default": "patient_reported"
+        },
+        {
+         "fieldname": "predecessor",
+         "fieldtype": "Link",
+         "label": "Predecessor",
+         "options": "OC Goal Statement"
+        },
+        {
+         "fieldname": "amendment_reason",
+         "fieldtype": "Small Text",
+         "label": "Amendment Reason"
+        },
+        {
+         "fieldname": "goal_reported",
+         "fieldtype": "Small Text",
+         "label": "Goal Reported"
+        },
+        {
+         "fieldname": "target_reported",
+         "fieldtype": "Data",
+         "label": "Target Reported"
+        },
+        {
+         "fieldname": "timeframe_reported",
+         "fieldtype": "Data",
+         "label": "Timeframe Reported"
+        },
+        {
+         "fieldname": "confidence_reported",
+         "fieldtype": "Data",
+         "label": "Confidence Reported"
+        }
+       ],
+       "permissions": [
+        {
+         "role": "System Manager",
+         "read": 1,
+         "write": 1,
+         "create": 1,
+         "delete": 1
+        }
+       ],
+       "sort_field": "modified",
+       "sort_order": "DESC",
+       "editable_grid": 1,
+       "track_changes": 1
+      }
