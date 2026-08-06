@@ -1,0 +1,16 @@
+# Negative fixture (T012): idempotency_divergence — must fire diverged.
+schema_version: 1
+kind: oc_negative_fixture
+synthetic: true
+class: idempotency_divergence
+arm: idempotency_decision
+expect: diverged
+inputs:
+  existing:
+  - patient: SYN-PAT-A
+    idempotency_key: SYN-KEY-01
+    content_hash: "1111111111111111111111111111111111111111111111111111111111111111"
+    name: SYN-SUB-01
+  patient: SYN-PAT-A
+  idempotency_key: SYN-KEY-01
+  incoming_hash: "2222222222222222222222222222222222222222222222222222222222222222"

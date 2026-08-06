@@ -1,0 +1,10 @@
+# Negative fixture (T012): pin_drift — must fire OC-PIN-DRIFT.
+schema_version: 1
+kind: oc_negative_fixture
+synthetic: true
+class: pin_drift
+arm: validate
+expect: OC-PIN-DRIFT
+overlay:
+  - path: tests/fixtures/medx/intake-medications.yaml
+    append: "\n# SYN-TAMPER: one appended comment byte changes the digest\n"

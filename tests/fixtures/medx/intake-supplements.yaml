@@ -1,0 +1,38 @@
+# VENDORED from MedxFactory (one-patient-integration-contracts bundle
+# 1.4.0, tag one-patient-contracts/v1.4.0) — source path: examples/one-patient/golden/20-intake-raw/intake-supplements.yaml
+# Copied verbatim below the provenance header; the drift check pins
+# this file's digest in contracts/medx-pin.yaml. Never edit by hand;
+# re-vendor deliberately on a bundle re-pin.
+# FICTIONAL EXAMPLE — patient-reported supplements.
+schema_version: 1
+kind: medx_one_patient_raw_intake_envelope
+bundle_version: "1.4.0"
+synthetic: true
+
+# Patient side of DISC-02: a supplement with NO corresponding chart
+# entry. Unreported supplement use is a common, genuinely
+# reconciliation-relevant gap; the fixture's claim is only that the
+# omission must reach a clinician as a reviewable item. It states no
+# interaction, severity, or recommendation.
+
+envelope:
+  record_family: supplement
+  source_system: openchart_expanded_intake
+  source_record_id: SYN-INTAKE-SUP-0001
+  source_record_version: "1"
+  reported_at: "2026-07-30T16:44:00Z"
+  content:
+    entries:
+      - entry_id: SYN-INTAKE-SUPLINE-0001
+        reported_text: St John's Wort capsule, 300 mg three times a day
+        code:
+          system: SYN-ILLUSTRATIVE-SUP
+          code: SYN-SUP-ST-JOHNS-WORT
+          display: St John's Wort
+        dose_amount: 300
+        dose_unit: mg
+        frequency: three_times_daily
+        formulation: capsule
+        indication_reported: low_mood
+        adherence_reported: takes_most_days
+        confidence_reported: medium

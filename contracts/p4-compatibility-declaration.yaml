@@ -1,0 +1,44 @@
+# p4's published compatibility surface (change task 3.1): what HealthLinc,
+# MedxEHR, and the final integration may rely on. The MedxFactory program
+# reads this the way it reads the p1/p2/p3 declarations — as data.
+schema_version: 1
+kind: oc_compatibility_declaration
+synthetic: true
+component:
+  id: p4-expanded-patient-intake-foundation
+  home_repository: openChart
+  version: 0.1.0
+  original_implementation: true   # not a fork of OpenEMR or Marley
+consumes:
+  bundle_id: one-patient-integration-contracts
+  bundle_version: "1.4.0"
+  bundle_range: ">=1.2.0,<2.0.0"
+  # Verified against the vendored copies on every validate (OC-PIN-DRIFT);
+  # the cross-repo source digests are provenance, verified architect-side.
+  pin_record: contracts/medx-pin.yaml
+support_matrix:
+  frappe: v15
+  python: "3.11"
+  mariadb: "10.6"
+api_surface:
+  module: open_chart.api.v1
+  verbs:
+    - submit                        # idempotent on (patient, idempotency_key)
+    - amend                         # succession only; predecessor + reason + actor + time
+    - read_submission
+    - register_external_identifier  # conflict -> identity_review, never merge
+  events:
+    - oc_intake_submission_update   # pointer-only payload (FR-008)
+  guarantees:
+    - direct table writes rejected (OC-DIRECT-WRITE)
+    - accepted submissions immutable in place (OC-ACCEPTED-IMMUTABLE)
+    - every statement assertion_kind=patient_reported; no prescription,
+      diagnosis, order, administration, or autonomous action is ever emitted
+gate_posture:
+  G2: co-owned with p6-one-patient-intake-experience (unbuilt); this
+    component's evidence is STANDALONE conformance — the golden round trip
+    with no Medx application installed. Conformant G2 evidence exists only
+    when both owners exist (the program's dual-owner rule).
+verification:
+  bench_free: make validate      # pin drift, census, shape, simulated round trip, harness
+  gated: make validate-docker    # site install, migrations, live round trip on the pinned matrix

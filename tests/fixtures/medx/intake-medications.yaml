@@ -1,0 +1,44 @@
+# VENDORED from MedxFactory (one-patient-integration-contracts bundle
+# 1.4.0, tag one-patient-contracts/v1.4.0) — source path: examples/one-patient/golden/20-intake-raw/intake-medications.yaml
+# Copied verbatim below the provenance header; the drift check pins
+# this file's digest in contracts/medx-pin.yaml. Never edit by hand;
+# re-vendor deliberately on a bundle re-pin.
+# FICTIONAL EXAMPLE — patient-reported medications.
+schema_version: 1
+kind: medx_one_patient_raw_intake_envelope
+bundle_version: "1.4.0"
+synthetic: true
+
+# Patient side of DISC-01 (reports 20 mg where the chart says 10 mg) and
+# DISC-03 (reports the generic name of the brand-charted statin).
+
+envelope:
+  record_family: medication
+  source_system: openchart_expanded_intake
+  source_record_id: SYN-INTAKE-MED-0001
+  source_record_version: "1"
+  reported_at: "2026-07-30T16:41:00Z"
+  content:
+    entries:
+      - entry_id: SYN-INTAKE-MEDLINE-0001
+        reported_text: lisinopril 20 mg, one tablet every morning
+        code:
+          system: SYN-ILLUSTRATIVE-RX
+          code: SYN-RX-LISINOPRIL
+          display: lisinopril
+        dose_amount: 20
+        dose_unit: mg
+        frequency: once_daily
+        adherence_reported: takes_as_described
+        confidence_reported: high
+      - entry_id: SYN-INTAKE-MEDLINE-0002
+        reported_text: atorvastatin 20 mg at night
+        code:
+          system: SYN-ILLUSTRATIVE-RX
+          code: SYN-RX-ATORVASTATIN-GENERIC
+          display: atorvastatin
+        dose_amount: 20
+        dose_unit: mg
+        frequency: once_nightly
+        adherence_reported: takes_as_described
+        confidence_reported: medium

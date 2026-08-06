@@ -1,0 +1,110 @@
+# Negative fixture (T012): roundtrip_loss — must fire OC-ROUNDTRIP-LOSS.
+schema_version: 1
+kind: oc_negative_fixture
+synthetic: true
+class: roundtrip_loss
+arm: validate
+expect: OC-ROUNDTRIP-LOSS
+# NOTE: deleting the medication family's dose_unit mapping row also makes
+# dose_unit unmapped for that family, so OC-CENSUS-GAP will also fire on
+# this overlay. That is expected — the harness asserts the expected code
+# is PRESENT among the findings, not that it is the only one.
+overlay:
+  - path: contracts/intake-census.yaml
+    content: |
+      # The intake field census (brief D9): every golden intake field mapped
+      # to its DocType field, AS DATA. The census check walks this file —
+      # an unmapped golden field is OC-CENSUS-GAP; a mapped field missing
+      # from the DocType JSON is OC-DOCTYPE-SHAPE. No field list in code.
+      schema_version: 1
+      kind: oc_intake_census
+      census:
+        families:
+        - record_family: medication
+          doctype: OC Medication Statement
+          fixture: tests/fixtures/medx/intake-medications.yaml
+          fields:
+          - golden: entry_id
+            fieldname: source_entry_id
+          - golden: reported_text
+            fieldname: reported_text
+          - golden: code.system
+            fieldname: code_system
+          - golden: code.code
+            fieldname: code_value
+          - golden: code.display
+            fieldname: code_display
+          - golden: dose_amount
+            fieldname: dose_amount
+          - golden: frequency
+            fieldname: frequency
+          - golden: adherence_reported
+            fieldname: adherence_reported
+          - golden: confidence_reported
+            fieldname: confidence_reported
+        - record_family: supplement
+          doctype: OC Supplement Statement
+          fixture: tests/fixtures/medx/intake-supplements.yaml
+          fields:
+          - golden: entry_id
+            fieldname: source_entry_id
+          - golden: reported_text
+            fieldname: reported_text
+          - golden: code.system
+            fieldname: code_system
+          - golden: code.code
+            fieldname: code_value
+          - golden: code.display
+            fieldname: code_display
+          - golden: dose_amount
+            fieldname: dose_amount
+          - golden: dose_unit
+            fieldname: dose_unit
+          - golden: frequency
+            fieldname: frequency
+          - golden: formulation
+            fieldname: formulation
+          - golden: indication_reported
+            fieldname: indication_reported
+          - golden: adherence_reported
+            fieldname: adherence_reported
+          - golden: confidence_reported
+            fieldname: confidence_reported
+        - record_family: history
+          doctype: OC Condition Statement
+          fixture: tests/fixtures/medx/intake-history.yaml
+          fields:
+          - golden: entry_id
+            fieldname: source_entry_id
+          - golden: reported_text
+            fieldname: reported_text
+          - golden: code.system
+            fieldname: code_system
+          - golden: code.code
+            fieldname: code_value
+          - golden: code.display
+            fieldname: code_display
+          - golden: onset_reported
+            fieldname: onset_reported
+          - golden: confidence_reported
+            fieldname: confidence_reported
+        declared_only_families:
+        - record_family: allergy
+          doctype: OC Allergy Statement
+        - record_family: observation
+          doctype: OC Observation Statement
+        - record_family: symptom
+          doctype: OC Symptom Statement
+        - record_family: goal
+          doctype: OC Goal Statement
+        - record_family: document_reference
+          doctype: OC Document Reference Statement
+        common_fields:
+        - patient
+        - submission
+        - assertion_kind
+        - source_entry_id
+        - reported_text
+        - verification_state
+        - predecessor
+        - amendment_reason

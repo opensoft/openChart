@@ -1,0 +1,28 @@
+# VENDORED from MedxFactory (one-patient-integration-contracts bundle
+# 1.4.0, tag one-patient-contracts/v1.4.0) — source path: examples/one-patient/golden/30-identity/binding-03-openchart.yaml
+# Copied verbatim below the provenance header; the drift check pins
+# this file's digest in contracts/medx-pin.yaml. Never edit by hand;
+# re-vendor deliberately on a bundle re-pin.
+# FICTIONAL EXAMPLE — synthetic expectation layer.
+schema_version: 1
+kind: medx_one_patient_binding
+bundle_version: "1.4.0"
+synthetic: true
+
+# One verified link from a source-local identifier to the single opaque
+# medx_patient_id. Four such bindings resolve HealthLinc, OpenEMR,
+# openChart and the logical ledger to one patient (gate G3).
+
+binding:
+  medx_patient_id: SYN-MEDX-PT-0001
+  tenant: SYN-TENANT-EXAMPLE-CLINIC
+  identifier_namespace: openchart
+  source_endpoint_or_issuer: SYN-ENDPOINT-OPENCHART-DEV
+  local_identifier: SYN-OPENCHART-PT-8802
+  binding_method: human_verified_crosswalk
+  status: verified
+  actor: SYN-ACTOR-IDENTITY-REVIEWER-01
+  evidence_ref: SYN-EVIDENCE-OPENCHART-0001
+  effective_interval:
+    start: "2026-07-31T00:00:00Z"
+  binding_version: 1

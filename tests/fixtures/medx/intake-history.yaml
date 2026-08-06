@@ -1,0 +1,27 @@
+# VENDORED from MedxFactory (one-patient-integration-contracts bundle
+# 1.4.0, tag one-patient-contracts/v1.4.0) — source path: examples/one-patient/golden/20-intake-raw/intake-history.yaml
+# Copied verbatim below the provenance header; the drift check pins
+# this file's digest in contracts/medx-pin.yaml. Never edit by hand;
+# re-vendor deliberately on a bundle re-pin.
+# FICTIONAL EXAMPLE — patient-reported history.
+schema_version: 1
+kind: medx_one_patient_raw_intake_envelope
+bundle_version: "1.4.0"
+synthetic: true
+
+envelope:
+  record_family: history
+  source_system: openchart_expanded_intake
+  source_record_id: SYN-INTAKE-HX-0001
+  source_record_version: "1"
+  reported_at: "2026-07-30T16:47:00Z"
+  content:
+    entries:
+      - entry_id: SYN-INTAKE-HXLINE-0001
+        reported_text: told I have high blood pressure a few years ago
+        code:
+          system: SYN-ILLUSTRATIVE-DX
+          code: SYN-DX-HYPERTENSION
+          display: hypertension
+        onset_reported: approximately_2019
+        confidence_reported: medium

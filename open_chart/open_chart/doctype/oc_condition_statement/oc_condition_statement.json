@@ -1,0 +1,116 @@
+{
+ "doctype": "DocType",
+ "name": "OC Condition Statement",
+ "module": "Open Chart",
+ "custom": 0,
+ "engine": "InnoDB",
+ "naming_rule": "Expression",
+ "autoname": "format:OC-CONDST-{#####}",
+ "field_order": [
+  "patient",
+  "submission",
+  "assertion_kind",
+  "source_entry_id",
+  "reported_text",
+  "verification_state",
+  "predecessor",
+  "amendment_reason",
+  "code_system",
+  "code_value",
+  "code_display",
+  "onset_reported",
+  "confidence_reported"
+ ],
+ "fields": [
+  {
+   "fieldname": "patient",
+   "fieldtype": "Link",
+   "label": "Patient",
+   "options": "OC Patient",
+   "reqd": 1
+  },
+  {
+   "fieldname": "submission",
+   "fieldtype": "Link",
+   "label": "Submission",
+   "options": "OC Intake Submission",
+   "reqd": 1
+  },
+  {
+   "fieldname": "assertion_kind",
+   "fieldtype": "Data",
+   "label": "Assertion Kind",
+   "reqd": 1,
+   "default": "patient_reported",
+   "read_only": 1
+  },
+  {
+   "fieldname": "source_entry_id",
+   "fieldtype": "Data",
+   "label": "Source Entry Id",
+   "reqd": 1
+  },
+  {
+   "fieldname": "reported_text",
+   "fieldtype": "Small Text",
+   "label": "Reported Text",
+   "reqd": 1
+  },
+  {
+   "fieldname": "verification_state",
+   "fieldtype": "Select",
+   "label": "Verification State",
+   "options": "patient_reported\nclinician_verified",
+   "default": "patient_reported"
+  },
+  {
+   "fieldname": "predecessor",
+   "fieldtype": "Link",
+   "label": "Predecessor",
+   "options": "OC Condition Statement"
+  },
+  {
+   "fieldname": "amendment_reason",
+   "fieldtype": "Small Text",
+   "label": "Amendment Reason"
+  },
+  {
+   "fieldname": "code_system",
+   "fieldtype": "Data",
+   "label": "Code System"
+  },
+  {
+   "fieldname": "code_value",
+   "fieldtype": "Data",
+   "label": "Code Value"
+  },
+  {
+   "fieldname": "code_display",
+   "fieldtype": "Data",
+   "label": "Code Display"
+  },
+  {
+   "fieldname": "onset_reported",
+   "fieldtype": "Data",
+   "label": "Onset Reported"
+  },
+  {
+   "fieldname": "confidence_reported",
+   "fieldtype": "Data",
+   "label": "Confidence Reported"
+  }
+ ],
+ "permissions": [
+  {
+   "role": "System Manager",
+   "read": 1,
+   "write": 1,
+   "create": 1,
+   "delete": 1
+  }
+ ],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "editable_grid": 1,
+ "track_changes": 1
+}

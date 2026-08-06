@@ -1,0 +1,38 @@
+# Negative fixture (T012): doctype_shape — must fire OC-DOCTYPE-SHAPE.
+# T013 expect_all: three distinct shape branches watched by one arm.
+schema_version: 1
+kind: oc_negative_fixture
+synthetic: true
+class: doctype_shape
+arm: validate
+expect: OC-DOCTYPE-SHAPE
+overlay:
+- path: open_chart/open_chart/doctype/oc_goal_statement/oc_goal_statement.json
+  content: "{\n \"doctype\": \"DocType\",\n \"name\": \"OC Goal Statement\",\n \"module\": \"Wrong Module\"\
+    ,\n \"custom\": 0,\n \"engine\": \"InnoDB\",\n \"naming_rule\": \"Expression\",\n \"autoname\": \"\
+    format:OC-GOALST-{#####}\",\n \"field_order\": [\n  \"patient\",\n  \"submission\",\n  \"assertion_kind\"\
+    ,\n  \"source_entry_id\",\n  \"reported_text\",\n  \"verification_state\",\n  \"predecessor\",\n \
+    \ \"goal_reported\",\n  \"target_reported\",\n  \"timeframe_reported\",\n  \"confidence_reported\"\
+    \n ],\n \"fields\": [\n  {\n   \"fieldname\": \"patient\",\n   \"fieldtype\": \"Link\",\n   \"label\"\
+    : \"Patient\",\n   \"options\": \"OC Patient\",\n   \"reqd\": 1\n  },\n  {\n   \"fieldname\": \"submission\"\
+    ,\n   \"fieldtype\": \"Link\",\n   \"label\": \"Submission\",\n   \"options\": \"OC Intake Submission\"\
+    ,\n   \"reqd\": 1\n  },\n  {\n   \"fieldname\": \"assertion_kind\",\n   \"fieldtype\": \"Data\",\n\
+    \   \"label\": \"Assertion Kind\",\n   \"reqd\": 1,\n   \"default\": \"SYN-wrong-default\",\n   \"\
+    read_only\": 1\n  },\n  {\n   \"fieldname\": \"source_entry_id\",\n   \"fieldtype\": \"Data\",\n \
+    \  \"label\": \"Source Entry Id\",\n   \"reqd\": 1\n  },\n  {\n   \"fieldname\": \"reported_text\"\
+    ,\n   \"fieldtype\": \"Small Text\",\n   \"label\": \"Reported Text\",\n   \"reqd\": 1\n  },\n  {\n\
+    \   \"fieldname\": \"verification_state\",\n   \"fieldtype\": \"Select\",\n   \"label\": \"Verification\
+    \ State\",\n   \"options\": \"patient_reported\\nclinician_verified\",\n   \"default\": \"patient_reported\"\
+    \n  },\n  {\n   \"fieldname\": \"predecessor\",\n   \"fieldtype\": \"Link\",\n   \"label\": \"Predecessor\"\
+    ,\n   \"options\": \"OC Goal Statement\"\n  },\n  {\n   \"fieldname\": \"goal_reported\",\n   \"fieldtype\"\
+    : \"Small Text\",\n   \"label\": \"Goal Reported\"\n  },\n  {\n   \"fieldname\": \"target_reported\"\
+    ,\n   \"fieldtype\": \"Data\",\n   \"label\": \"Target Reported\"\n  },\n  {\n   \"fieldname\": \"\
+    timeframe_reported\",\n   \"fieldtype\": \"Data\",\n   \"label\": \"Timeframe Reported\"\n  },\n \
+    \ {\n   \"fieldname\": \"confidence_reported\",\n   \"fieldtype\": \"Data\",\n   \"label\": \"Confidence\
+    \ Reported\"\n  }\n ],\n \"permissions\": [\n  {\n   \"role\": \"System Manager\",\n   \"read\": 1,\n\
+    \   \"write\": 1,\n   \"create\": 1,\n   \"delete\": 1\n  }\n ],\n \"sort_field\": \"modified\",\n\
+    \ \"sort_order\": \"DESC\",\n \"editable_grid\": 1,\n \"track_changes\": 1\n}\n"
+expect_all:
+- module must be 'Open Chart'
+- assertion_kind must default to patient_reported
+- lacks common spine field 'amendment_reason'
