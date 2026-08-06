@@ -47,6 +47,6 @@ check.
 - [x] T014 [opus] requirement-coverage.md (closes change verification).
 - [x] T015 [P] [sonnet] README updates (status: app exists; quickstart).
 - [x] T016 [opus] Coherence pass.
-- [ ] T017 [fable] Architect acceptance + change-side records.
+- [x] T017 [fable] Architect acceptance + change-side records.
 
 Total: 17 tasks (5 sonnet, 11 opus, 1 fable).

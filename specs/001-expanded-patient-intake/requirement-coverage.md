@@ -1,6 +1,6 @@
 # Requirement Coverage — Feature 001 (T014)
 
-Status: draft (accepted with T017)
+Status: accepted with T017 (2026-08-05)
 Closes: `add-expanded-patient-intake-foundation` verification task (change
 task 3.x); every FR and SC below names its executable check and where its
 firing was WATCHED — a check nobody has seen fail is not evidence.
