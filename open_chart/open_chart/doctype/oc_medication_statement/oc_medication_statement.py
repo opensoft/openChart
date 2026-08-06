@@ -1,15 +1,7 @@
-"""OC Medication Statement controller (FR-005: statement DocTypes preserve
-the full reported detail census of the golden intake layer, including
-route/timing/indication capacity even where a golden fixture omits them --
-unknown stays empty, never inferred; FR-008: assertion_kind is always
-patient_reported and read-only -- no prescription, order, administration,
-recommendation, or autonomous action follows from this record)."""
-try:
-    import frappe
-    from frappe.model.document import Document
-except ImportError:  # bench-free repo validation
-    Document = object
+"""OC Medication Statement controller (FR-005, FR-008; write path guarded per brief D6)."""
+
+from open_chart.intake.guarded import GuardedDocument
 
 
-class OCMedicationStatement(Document):
+class OCMedicationStatement(GuardedDocument):
     pass

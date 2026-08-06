@@ -28,6 +28,10 @@ except ImportError as exc:  # pragma: no cover
     raise SystemExit(1)
 
 ROOT = Path(__file__).resolve().parents[1]
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+
+from open_chart.intake import core as intake_core  # noqa: E402
 
 PIN_PATH = Path("contracts/medx-pin.yaml")
 CENSUS_PATH = Path("contracts/intake-census.yaml")
@@ -232,11 +236,19 @@ def fixture_safety_errors(root: Path) -> list[str]:
     return errors
 
 
+def roundtrip_errors(root: Path) -> list[str]:
+    """The bench-free half of FR-009 (T011): golden payload -> statement
+    rows -> projection back -> field-for-field comparison. The live half
+    (real DocTypes) is the Docker-gated bench suite."""
+    return intake_core.simulated_roundtrip_errors(root)
+
+
 def validate(root: Path) -> list[str]:
     errors: list[str] = []
     errors.extend(pin_drift_errors(root))      # T003
     errors.extend(census_errors(root))         # T004
     errors.extend(doctype_shape_errors(root))  # T008
+    errors.extend(roundtrip_errors(root))      # T011
     errors.extend(fixture_safety_errors(root))
     return errors
 

@@ -1,15 +1,11 @@
-"""OC Intake Submission controller (brief D4: explicit lifecycle_state
-drives draft/submitted/accepted/amended, not Frappe docstatus semantics;
-amendments are new documents linked via predecessor. Brief D5: the
-(patient, idempotency_key) uniqueness for accepted submissions is
-enforced by the API layer, not a DB-level unique index on this field
-alone)."""
-try:
-    import frappe
-    from frappe.model.document import Document
-except ImportError:  # bench-free repo validation
-    Document = object
+"""OC Intake Submission controller (FR-003, FR-006; brief D4, D5, D6).
+
+Accepted content is immutable; amendments are successors, never
+in-place edits or Frappe cancel-amend. Enforced by GuardedSubmission.
+"""
+
+from open_chart.intake.guarded import GuardedSubmission
 
 
-class OCIntakeSubmission(Document):
+class OCIntakeSubmission(GuardedSubmission):
     pass

@@ -1,10 +1,7 @@
-"""OC Document Reference Statement controller (FR-005: preserve full reported detail census)."""
-try:
-    import frappe
-    from frappe.model.document import Document
-except ImportError:  # bench-free repo validation
-    Document = object
+"""OC Document Reference Statement controller (FR-005, FR-008; write path guarded per brief D6)."""
+
+from open_chart.intake.guarded import GuardedDocument
 
 
-class OCDocumentReferenceStatement(Document):
+class OCDocumentReferenceStatement(GuardedDocument):
     pass

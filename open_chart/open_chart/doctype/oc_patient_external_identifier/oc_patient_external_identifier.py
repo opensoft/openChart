@@ -1,12 +1,11 @@
-"""OC Patient External Identifier controller (brief D3: statement identity;
-external identifiers carry status/version lifecycle rather than mutating
-in place)."""
-try:
-    import frappe
-    from frappe.model.document import Document
-except ImportError:  # bench-free repo validation
-    Document = object
+"""OC Patient External Identifier controller (FR-002; brief D3, D6).
+
+An active (issuer, value) pair on another patient forces
+identity_review — never a merge. Enforced by GuardedIdentifier.
+"""
+
+from open_chart.intake.guarded import GuardedIdentifier
 
 
-class OCPatientExternalIdentifier(Document):
+class OCPatientExternalIdentifier(GuardedIdentifier):
     pass
