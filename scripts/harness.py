@@ -165,6 +165,10 @@ def main() -> int:  # noqa: PLR0915 — one linear battery, reported at the end
                 findings = observe(validate_mod.validate(mutated))
                 if not any(expect in f for f in findings):
                     failures.append(f"{label}: expected {expect} did not fire")
+                for required in fixture.get("expect_all") or []:
+                    # distinct branches of one finding code, each watched
+                    if not any(str(required) in f for f in findings):
+                        failures.append(f"{label}: branch {required!r} did not fire")
                 checker = CLASS_CHECKER[klass]
                 original = getattr(validate_mod, checker)
                 setattr(validate_mod, checker, lambda root: [])
