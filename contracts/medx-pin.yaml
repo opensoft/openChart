@@ -1,0 +1,33 @@
+# The MedxFactory contract pin (brief D8): the bundle this app's intake
+# contract targets, and the digest of every vendored fixture. Both sides
+# recomputed by scripts/validate.py on every run (OC-PIN-DRIFT).
+# source_sha256 records the upstream file AT VENDORING TIME — informative
+# for re-pin diffs; the enforced value is the vendored file's sha256.
+schema_version: 1
+kind: oc_medx_pin
+pin:
+  bundle_id: one-patient-integration-contracts
+  bundle_version: 1.4.0
+  tag: one-patient-contracts/v1.4.0
+  bundle_manifest_sha256: 30cf554de3422796db63da3078f44fbb0b5891db03bb00bd66685183f11ed167
+  vendored:
+  - vendored_path: tests/fixtures/medx/intake-manifest.yaml
+    source_path: examples/one-patient/golden/20-intake-raw/intake-manifest.yaml
+    sha256: dbcfd83c20f63af656bcef1d9b596c605e87cb95fd12a10f67f1d53c1dfb294b
+    source_sha256: ec010ec0fb851e41604926fd69620a3cc37b5c94c2b46ab4287a5e136d4ffd1d
+  - vendored_path: tests/fixtures/medx/intake-medications.yaml
+    source_path: examples/one-patient/golden/20-intake-raw/intake-medications.yaml
+    sha256: 2bd43d1cd1ec5e4509b30fc0c7ca2ffc2ff8c5e160b1455139155a88194b121f
+    source_sha256: 899a1e2b80a1e0f702e207daf318cf80e7a57d02235e2aee3da72a03b34d19fc
+  - vendored_path: tests/fixtures/medx/intake-supplements.yaml
+    source_path: examples/one-patient/golden/20-intake-raw/intake-supplements.yaml
+    sha256: 865da9c6ea8aaf9148cdbd0cb6e3729c917d206281e5d491aa1063ff3c7c09d9
+    source_sha256: 65ec4ad92ba30d4d1e66bd49a30720517a60b905ebf9bfd960943616a696f778
+  - vendored_path: tests/fixtures/medx/intake-history.yaml
+    source_path: examples/one-patient/golden/20-intake-raw/intake-history.yaml
+    sha256: 9a2cf113c9e20b59d069dc06608c60a96650f1e459bf18f797466522d6db875b
+    source_sha256: 8c5b04f7c111a301cfbe66701dab8f769c166ce67ab92efd50c8ecd367e4aba9
+  - vendored_path: tests/fixtures/medx/binding-03-openchart.yaml
+    source_path: examples/one-patient/golden/30-identity/binding-03-openchart.yaml
+    sha256: 576d2e406fdb75247f389ec14c50f74c601fc24079c4e97caf12b20c332aaec2
+    source_sha256: 213f2447310f5076795e09c9ba04d8f6c5d6e70700d840d1b9f6303d7bdbc777

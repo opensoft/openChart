@@ -1,0 +1,14 @@
+[project]
+name = "open_chart"
+version = "0.1.0"
+description = "openChart — original Frappe-native clinical charting (expanded patient intake foundation)"
+requires-python = ">=3.11"
+readme = "README.md"
+
+# Frappe apps are installed into a bench; the framework dependency is
+# provided by the site, not by pip. The supported matrix (brief D2):
+# Frappe v15, Python 3.11, MariaDB 10.6 — exercised via docker/compose.yaml.
+
+[build-system]
+requires = ["flit_core >=3.4,<4"]
+build-backend = "flit_core.buildapi"

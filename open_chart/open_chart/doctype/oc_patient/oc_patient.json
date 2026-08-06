@@ -1,0 +1,45 @@
+{
+  "doctype": "DocType",
+  "name": "OC Patient",
+  "module": "Open Chart",
+  "custom": 0,
+  "engine": "InnoDB",
+  "naming_rule": "Expression",
+  "autoname": "format:OC-PAT-{#####}",
+  "field_order": [
+    "patient_name",
+    "date_of_birth",
+    "sex_recorded"
+  ],
+  "fields": [
+    {
+      "fieldname": "patient_name",
+      "fieldtype": "Data",
+      "label": "Patient Name",
+      "reqd": 1
+    },
+    {
+      "fieldname": "date_of_birth",
+      "fieldtype": "Date",
+      "label": "Date Of Birth"
+    },
+    {
+      "fieldname": "sex_recorded",
+      "fieldtype": "Data",
+      "label": "Sex Recorded"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "editable_grid": 1,
+  "track_changes": 1
+}

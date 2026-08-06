@@ -1,0 +1,27 @@
+# VENDORED from MedxFactory (one-patient-integration-contracts bundle
+# 1.4.0, tag one-patient-contracts/v1.4.0) — source path: examples/one-patient/golden/20-intake-raw/intake-manifest.yaml
+# Copied verbatim below the provenance header; the drift check pins
+# this file's digest in contracts/medx-pin.yaml. Never edit by hand;
+# re-vendor deliberately on a bundle re-pin.
+# FICTIONAL EXAMPLE — synthetic expanded intake.
+schema_version: 1
+kind: medx_one_patient_intake_manifest
+bundle_version: "1.4.0"
+synthetic: true
+
+# The IMMUTABLE record of what the patient reported. Patient-reported
+# content is never merged into charted content: it keeps its own
+# identifiers, source, assertion kind, and provenance (FR-007).
+
+intake_manifest:
+  manifest_id: SYN-INTAKE-MANIFEST-0001
+  source_system: openchart_expanded_intake
+  source_contract_version: "SYN-INTAKE-1.0"
+  collection_context: SYN-SESSION-INTAKE-0001
+  collected_at: "2026-07-30T16:40:00Z"
+  responsible_component: p4-expanded-patient-intake-foundation
+  raw_payload_refs:
+    - 20-intake-raw/intake-medications.yaml
+    - 20-intake-raw/intake-supplements.yaml
+    - 20-intake-raw/intake-history.yaml
+  content_hash: "26a10502487aa41284f6ed4eaa841480beec4f16ae4409c01c421aae8911ab88"

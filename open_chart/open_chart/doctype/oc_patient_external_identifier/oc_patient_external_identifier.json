@@ -1,0 +1,89 @@
+{
+  "doctype": "DocType",
+  "name": "OC Patient External Identifier",
+  "module": "Open Chart",
+  "custom": 0,
+  "engine": "InnoDB",
+  "naming_rule": "Expression",
+  "autoname": "format:OC-EXTID-{#####}",
+  "field_order": [
+    "patient",
+    "issuer_or_endpoint",
+    "namespace",
+    "value",
+    "status",
+    "effective_start",
+    "effective_end",
+    "provenance",
+    "identifier_version"
+  ],
+  "fields": [
+    {
+      "fieldname": "patient",
+      "fieldtype": "Link",
+      "label": "Patient",
+      "options": "OC Patient",
+      "reqd": 1
+    },
+    {
+      "fieldname": "issuer_or_endpoint",
+      "fieldtype": "Data",
+      "label": "Issuer Or Endpoint",
+      "reqd": 1
+    },
+    {
+      "fieldname": "namespace",
+      "fieldtype": "Data",
+      "label": "Namespace",
+      "reqd": 1
+    },
+    {
+      "fieldname": "value",
+      "fieldtype": "Data",
+      "label": "Value",
+      "reqd": 1
+    },
+    {
+      "fieldname": "status",
+      "fieldtype": "Select",
+      "label": "Status",
+      "options": "active\nsuperseded\nrevoked\nidentity_review",
+      "default": "active",
+      "reqd": 1
+    },
+    {
+      "fieldname": "effective_start",
+      "fieldtype": "Datetime",
+      "label": "Effective Start"
+    },
+    {
+      "fieldname": "effective_end",
+      "fieldtype": "Datetime",
+      "label": "Effective End"
+    },
+    {
+      "fieldname": "provenance",
+      "fieldtype": "Small Text",
+      "label": "Provenance"
+    },
+    {
+      "fieldname": "identifier_version",
+      "fieldtype": "Int",
+      "label": "Identifier Version",
+      "default": "1"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "editable_grid": 1,
+  "track_changes": 1
+}

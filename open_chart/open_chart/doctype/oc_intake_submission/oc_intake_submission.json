@@ -1,0 +1,110 @@
+{
+  "doctype": "DocType",
+  "name": "OC Intake Submission",
+  "module": "Open Chart",
+  "custom": 0,
+  "engine": "InnoDB",
+  "naming_rule": "Expression",
+  "autoname": "format:OC-SUB-{#####}",
+  "field_order": [
+    "patient",
+    "contract_version",
+    "submission_version",
+    "lifecycle_state",
+    "submitter_context",
+    "purpose_or_consent_ref",
+    "created_time",
+    "submitted_time",
+    "provenance",
+    "idempotency_key",
+    "predecessor",
+    "amendment_reason"
+  ],
+  "fields": [
+    {
+      "fieldname": "patient",
+      "fieldtype": "Link",
+      "label": "Patient",
+      "options": "OC Patient",
+      "reqd": 1
+    },
+    {
+      "fieldname": "contract_version",
+      "fieldtype": "Data",
+      "label": "Contract Version",
+      "reqd": 1
+    },
+    {
+      "fieldname": "submission_version",
+      "fieldtype": "Int",
+      "label": "Submission Version",
+      "default": "1",
+      "reqd": 1
+    },
+    {
+      "fieldname": "lifecycle_state",
+      "fieldtype": "Select",
+      "label": "Lifecycle State",
+      "options": "draft\nsubmitted\naccepted\namended",
+      "default": "draft",
+      "reqd": 1
+    },
+    {
+      "fieldname": "submitter_context",
+      "fieldtype": "Small Text",
+      "label": "Submitter Context",
+      "reqd": 1
+    },
+    {
+      "fieldname": "purpose_or_consent_ref",
+      "fieldtype": "Data",
+      "label": "Purpose Or Consent Ref"
+    },
+    {
+      "fieldname": "created_time",
+      "fieldtype": "Datetime",
+      "label": "Created Time"
+    },
+    {
+      "fieldname": "submitted_time",
+      "fieldtype": "Datetime",
+      "label": "Submitted Time"
+    },
+    {
+      "fieldname": "provenance",
+      "fieldtype": "Small Text",
+      "label": "Provenance"
+    },
+    {
+      "fieldname": "idempotency_key",
+      "fieldtype": "Data",
+      "label": "Idempotency Key",
+      "reqd": 1,
+      "unique": 0
+    },
+    {
+      "fieldname": "predecessor",
+      "fieldtype": "Link",
+      "label": "Predecessor",
+      "options": "OC Intake Submission"
+    },
+    {
+      "fieldname": "amendment_reason",
+      "fieldtype": "Small Text",
+      "label": "Amendment Reason"
+    }
+  ],
+  "permissions": [
+    {
+      "role": "System Manager",
+      "read": 1,
+      "write": 1,
+      "create": 1,
+      "delete": 1
+    }
+  ],
+  "sort_field": "modified",
+  "sort_order": "DESC",
+  "editable_grid": 1,
+  "track_changes": 1
+}

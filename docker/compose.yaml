@@ -1,0 +1,54 @@
+# openChart bench-dependent check environment (feature 001, T002; brief D7).
+#
+# Everything here is PINNED to the feature's support matrix (ruling Q1):
+# Frappe v15 + Python 3.11 + MariaDB 10.6, exercised through the official
+# frappe_docker bench image. Widening the matrix is a reviewed change.
+#
+# This compose file exists for ONE purpose: the checks that cannot run
+# bench-free — site install, migrations, and the live golden intake round
+# trip. Run them with `make validate-docker` (which runs
+# docker/run-checks.sh inside the bench service). Repo-content checks
+# live in scripts/validate.py and never need this file.
+#
+# The database credentials below are compose-local test values for a
+# throwaway container network — synthetic by construction, never reused
+# anywhere (FR-012 concerns REAL credentials; these are not).
+
+name: open-chart-checks
+
+services:
+  db:
+    image: mariadb:10.6.27
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed
+    environment:
+      MYSQL_ROOT_PASSWORD: oc-test-root
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-poc-test-root"]
+      interval: 5s
+      retries: 20
+
+  redis-cache:
+    image: redis:6.2-alpine
+
+  redis-queue:
+    image: redis:6.2-alpine
+
+  bench:
+    image: frappe/bench:v5.31.0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_started
+      redis-queue:
+        condition: service_started
+    volumes:
+      # The repo mounts read-only; bench copies the app in. The gated
+      # suite must never be able to write back into the tree it checks.
+      - ..:/workspace/open_chart:ro
+    working_dir: /home/frappe
+    command: ["bash", "/workspace/open_chart/docker/run-checks.sh"]
