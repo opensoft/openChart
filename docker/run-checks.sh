@@ -26,6 +26,7 @@ command -v "$PY" >/dev/null 2>&1 || PY=python3
   || fail "python matrix pin (need 3.11, ruling Q1)"
 
 step "bench init (frappe version-15)"
+rm -rf "$BENCH_DIR"   # clean slate: a reused bench is not a proof
 bench init --skip-redis-config-generation --frappe-branch version-15 \
   --python "$PY" "$BENCH_DIR" || fail "bench init"
 cd "$BENCH_DIR" || fail "enter bench dir"
@@ -42,9 +43,14 @@ bench new-site "$SITE" --admin-password oc-test-admin \
   || fail "new site"
 
 step "get + install open_chart (standalone; no Medx app anywhere)"
-# Copy so the read-only mount stays untouchable; bench wants to write
-# into the app dir (egg-info, assets).
-cp -a "$APP_SRC" ./apps-src && bench get-app ./apps-src || fail "get-app"
+# Manual app registration instead of `bench get-app`: get-app git-clones,
+# and the mounted repo may be a git worktree whose .git pointer cannot
+# resolve inside the container. Copy (read-only mount stays untouchable),
+# strip git state, pip-install editable, register in apps.txt.
+cp -a "$APP_SRC" ./apps/open_chart || fail "copy app"
+rm -rf ./apps/open_chart/.git
+./env/bin/pip install --quiet -e ./apps/open_chart || fail "pip install app"
+grep -qx "open_chart" ./sites/apps.txt 2>/dev/null || echo "open_chart" >> ./sites/apps.txt
 bench --site "$SITE" install-app open_chart || fail "install-app"
 
 step "migrate"

@@ -11,6 +11,11 @@ validate:
 	python3 scripts/harness.py
 
 validate-docker:
+	# teardown runs whether the suite passes or fails — a stale bench
+	# container must never leak into the next run
 	docker compose -f docker/compose.yaml up \
-		--abort-on-container-exit --exit-code-from bench bench db redis-cache redis-queue
-	docker compose -f docker/compose.yaml down -v
+		--abort-on-container-exit --exit-code-from bench \
+		bench db redis-cache redis-queue; \
+	status=$$?; \
+	docker compose -f docker/compose.yaml down -v; \
+	exit $$status
