@@ -99,8 +99,10 @@ See [AGENTS.md](AGENTS.md) for the shared workflow and repository constraints.
 - `contracts/intake-census.yaml` — the golden intake field census.
 - `specs/001-expanded-patient-intake/` — spec, architect brief, plan, and
   tasks for this feature.
-- `openspec/changes/add-expanded-patient-intake-foundation/` — the
-  governing OpenSpec change record.
+- `openspec/specs/expanded-patient-intake/spec.md` — the promoted
+  capability specification.
+- `openspec/changes/archive/2026-08-05-add-expanded-patient-intake-foundation/`
+  — the governing OpenSpec change record (archived on landing).
 
 ## License
 
