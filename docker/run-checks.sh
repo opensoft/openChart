@@ -68,8 +68,12 @@ TEST_OUT=$(bench --site "$SITE" run-tests --app open_chart 2>&1)
 TEST_STATUS=$?
 echo "$TEST_OUT"
 [ "$TEST_STATUS" -eq 0 ] || fail "run-tests"
+# run-tests can exit 0 even on FAILED (observed run 5) — trust the
+# unittest verdict lines, not the launderable exit code.
 echo "$TEST_OUT" | grep -qE "Ran [1-9][0-9]* test" \
   || fail "zero tests ran (a suite that runs nothing proves nothing)"
+echo "$TEST_OUT" | grep -qE "FAILED" && fail "test failures (unittest reported FAILED)"
+echo "$TEST_OUT" | grep -qE "^OK$|^OK \(" || fail "unittest OK verdict missing"
 
 echo
 echo "OC-DOCKER-RESULT: PASS (install, migrate, tests on the pinned matrix)"

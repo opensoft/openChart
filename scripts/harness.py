@@ -198,6 +198,24 @@ def main() -> int:  # noqa: PLR0915 — one linear battery, reported at the end
             if decision_arm(flipped) == expect:
                 failures.append(f"{label}: decision is input-insensitive (probe)")
 
+    # -- arm 3b: hash representation invariance (D-ACC-4 regression) --------
+    payload = core.build_payload(ROOT)
+    census = core.load_census(ROOT)
+    as_int = core.build_rows(payload, census)
+    refloated = [
+        {**r, "fields": {k: float(v) if isinstance(v, int) and not isinstance(v, bool) else v
+                         for k, v in r["fields"].items()}}
+        for r in as_int
+    ]
+    if core.content_hash(as_int) != core.content_hash(refloated):
+        failures.append(
+            "content_hash is representation-sensitive: a Float field's 20.0 vs a "
+            "submitted 20 would misjudge byte-identical replays as diverged (D-ACC-4)"
+        )
+    tampered = [dict(r, fields={**r["fields"], "reported_text": "SYN-TAMPERED"}) for r in as_int[:1]] + as_int[1:]
+    if core.content_hash(as_int) == core.content_hash(tampered):
+        failures.append("content_hash missed a real content change (probe)")
+
     # -- arm 4: planted safety ---------------------------------------------
     with tempfile.TemporaryDirectory(prefix="oc-harness-") as tmp:
         planted = copy_tree(Path(tmp) / "planted")

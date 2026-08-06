@@ -215,15 +215,31 @@ def simulated_roundtrip_errors(root: Path | None = None) -> list[str]:
     return findings
 
 
+def _canonical_value(value) -> str:
+    """Representation-invariant value form: a Float field returns 20.0
+    for a submitted 20, and the hash must not read that as divergence —
+    the same tolerance ``_equal`` gives the round trip (D-ACC-4)."""
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
+        return str(value)
+    return str(int(number)) if number.is_integer() else repr(number)
+
+
 def content_hash(rows: list) -> str:
     """Canonical digest of the CLINICAL content of a submission's rows —
     what idempotency divergence is judged on. Execution metadata never
     participates (the bundle's equivalence discipline, applied here)."""
     canonical = [
-        {"doctype": str(r.get("doctype")), "fields": r.get("fields") or {}}
+        {
+            "doctype": str(r.get("doctype")),
+            "fields": {str(k): _canonical_value(v) for k, v in (r.get("fields") or {}).items()},
+        }
         for r in sorted(rows, key=lambda r: (str(r.get("doctype")), str((r.get("fields") or {}).get("source_entry_id"))))
     ]
-    return hashlib.sha256(json.dumps(canonical, sort_keys=True, default=str).encode()).hexdigest()
+    return hashlib.sha256(json.dumps(canonical, sort_keys=True).encode()).hexdigest()
 
 
 def idempotency_decision(
