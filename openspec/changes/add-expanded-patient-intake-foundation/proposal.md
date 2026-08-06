@@ -1,3 +1,8 @@
+code_surface: openChart (the original open_chart Frappe application: app package and site-install path, Patient / Patient External Identifier / Intake Submission / typed statement DocTypes, migrations, permissions, audit, the versioned idempotent intake API, supported MedxEHR extension seams, synthetic fixtures and contract tests against the pinned MedxFactory golden intake layer; bench-dependent checks Docker-gated; no clinician workflows, no billing, no external-EHR adapters, no reconciliation decisions)
+target_release: intake foundation v1 — archives on a landed, validator-green open_chart application whose golden-patient intake round-trip passes STANDALONE (no Medx application installed), with the accepted MedxFactory one-patient-integration-contracts intake and identity surfaces pinned by digest and the supported extension surfaces published for MedxEHR and HealthLinc
+Status: ratified
+Ratified by: Brett Heap's direction to start p4 ("build the Frappe foundation") on 2026-08-05 at the Spec Kit handoff (feature `001-expanded-patient-intake`). The proposal predated the front-matter convention; this stamp adds it. design.md's three open questions (Frappe/Python support matrix, synchronous terminology scope, child-table vs DocType split) carry to the feature's clarify round together with the toolchain question (no local bench; Docker present) and do not block the ratified requirement set.
+
 ## Why
 
 OpenEMR does not represent the complete patient-reported medication,
