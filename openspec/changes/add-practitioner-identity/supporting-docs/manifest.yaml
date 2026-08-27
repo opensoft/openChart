@@ -1,0 +1,43 @@
+format_version: 1
+change_id: add-practitioner-identity
+staging_id: openChart:staging:practitioner-identity-openxwallet
+transition_date: '2026-08-26'
+
+origin:
+  kind: staged
+  id: openChart:staging:practitioner-identity-openxwallet
+  path: ideation/staging/practitioner-identity-openxwallet
+
+source_path: ideation/staging/practitioner-identity-openxwallet/outline.md
+source_revision: d2376a31dbafa413d8e5ba032f4a2620a75d578e
+
+files:
+  - path: outline.md
+    sha256: 8e1c8ca9a6a5517e77dd27f126f344493ca63a1dcf655b85c2de9c03042f443b
+    source_path: ideation/staging/practitioner-identity-openxwallet/outline.md
+    source_sha256: 8e1c8ca9a6a5517e77dd27f126f344493ca63a1dcf655b85c2de9c03042f443b
+
+disposition_record:
+  path: ideation/staging/disposition-questions-round-1.md
+  sha256: 6b73de3733eaf5d57f3b40938e997443083677350c239623c5b19d7cb33c03bd
+  retained_in_staging: true
+  reason: >-
+    The round-1 disposition record covers both staged topics
+    (practitioner-identity-openxwallet and live-visit-companion). It stays in
+    staging as shared round evidence rather than moving with one topic.
+
+remaining_paths: []
+notebook_workspace: null
+
+source_state: >-
+  The complete staged topic moved into proposal ownership; the staging directory
+  ideation/staging/practitioner-identity-openxwallet was removed once empty. The
+  outline is byte-identical to the staged source (sha256 equals source_sha256),
+  including its relative links to ideation/brainstorm/, which resolved from the
+  staging location and are not rewritten here so the moved evidence stays
+  verifiable against its recorded hash. All six open questions carried
+  disposition status `accepted` (owner ruling 2026-08-26, disposition round 1)
+  at the time of transition, and the openxFactory extension path was confirmed
+  by the owner of both repositories; the practitioner profile-family contracts
+  remain unauthored and are carried by this change as coordinated dependent
+  work, not as a blocker.

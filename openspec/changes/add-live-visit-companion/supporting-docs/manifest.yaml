@@ -1,0 +1,46 @@
+format_version: 1
+change_id: add-live-visit-companion
+staging_id: openChart:staging:live-visit-companion
+transition_date: '2026-08-26'
+
+origin:
+  kind: staged
+  id: openChart:staging:live-visit-companion
+  path: ideation/staging/live-visit-companion
+
+source_path: ideation/staging/live-visit-companion/outline.md
+source_revision: d2376a31dbafa413d8e5ba032f4a2620a75d578e
+
+files:
+  - path: outline.md
+    sha256: 9132bd338b55e4bc51dde433e8aad28cab5665120f0e5f78065bc4fae374191b
+    source_path: ideation/staging/live-visit-companion/outline.md
+    source_sha256: 9132bd338b55e4bc51dde433e8aad28cab5665120f0e5f78065bc4fae374191b
+
+disposition_record:
+  path: ideation/staging/disposition-questions-round-1.md
+  sha256: 6b73de3733eaf5d57f3b40938e997443083677350c239623c5b19d7cb33c03bd
+  retained_in_staging: true
+  reason: >-
+    The round-1 disposition record covers both staged topics
+    (practitioner-identity-openxwallet and live-visit-companion). It stays in
+    staging as shared round evidence rather than moving with one topic.
+
+remaining_paths: []
+notebook_workspace: null
+
+source_state: >-
+  The complete staged topic moved into proposal ownership; the staging directory
+  ideation/staging/live-visit-companion was removed once empty. Before the move,
+  one gate-status line was appended to the outline's Exit section recording that
+  all six questions were dispositioned `accepted` in disposition round 1 and that
+  the practitioner-identity sibling is proposed; the sha256 above is the
+  post-append hash and source_sha256 records the same content, since the append
+  happened in the staging location before the move. The outline's relative links
+  to ideation/brainstorm/ resolved from the staging location and are not
+  rewritten here, so the moved evidence stays verifiable against its recorded
+  hash. All six open questions carried disposition status `accepted` (owner
+  ruling 2026-08-26, disposition round 1) at the time of transition. The
+  capability this change depends on for attestation credentials and AI order
+  intent, `practitioner-identity`, is proposed and not promoted; that dependency
+  is carried by this change as sequenced blocked work, not as a stop.
