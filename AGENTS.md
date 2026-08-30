@@ -31,6 +31,21 @@ copy or fork OpenEMR or Marley implementation code.
 
 ## Current Runtime Status
 
-The repository is at governance-scaffold stage. There are no Frappe runtime,
-build, migration, or test commands yet. Add those commands here when the first
-governed implementation establishes them.
+The repository contains the realized original Frappe v15 application
+`open_chart`, built by feature `001-expanded-patient-intake`. It includes the
+expanded-intake DocTypes, the guarded versioned `open_chart.api.v1` service
+boundary, migrations, synthetic fixtures, and standalone contract coverage.
+The pinned support matrix is Frappe v15, Python 3.11, and MariaDB 10.6.
+
+Use the validation commands published in README.md:
+
+- `make validate` runs the bench-free repository checks, simulated golden round
+  trip, fixture-safety checks, negative corpus, and guard probes.
+- `make validate-docker` runs installation, migrations, and live golden-round-
+  trip tests on the pinned Docker matrix; it reports a loud skip when Docker is
+  unavailable.
+
+The application and its validation must remain independently usable without a
+MedxFactory, MedxEHR, or openPractice application installed. Use only synthetic
+or explicitly de-identified test data and preserve the safety and portability
+rules above.
