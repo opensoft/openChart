@@ -9,7 +9,7 @@ Captured: 2026-08-24
 
 ## Possible feats
 
-- **Companion capability** — 
+- **Companion capability** —
 
 ## Focus
 
@@ -22,7 +22,7 @@ Permits narrowly governed emergency proxy access with explicit reason, rapid exp
 - **Outcome:** A successful action produces  and a patient-readable receipt or status.
 - **States:** The governed lifecycle is ; only server-validated transitions are accepted.
 - **Authority:** Patient and Proxy User portal roles are distinct from desk roles, and proxy actions recheck patient, scope, purpose, and effective dates.
-- **Safety:** 
+- **Safety:**
 - **Concurrency:** Stale versions, duplicate submissions, revoked authority, or conflicting accepted records return structured errors and never silently overwrite state.
 - **Accessibility:** The portal preserves language choice, keyboard access, responsive layout, and equivalent nonvisual status and error text.
 - **Audit:** Every protected view, attempted action, transition, notification, override, and denial enters the clinical audit trail with actor capacity, source, policy version, and correlation ID.
