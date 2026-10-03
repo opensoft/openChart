@@ -116,4 +116,4 @@ records, wallet secrets, or encryption keys to this repository.
 [Persistent synthetic QA procedure](docker/QA.md) and
 [historical p4 scenario record](specs/001-expanded-patient-intake/scenario-live-half.md).
 The August 2026 evidence is retained as captured; recovery is not a new live
-acceptance result. Run `python3 scripts/run_p4_live.py --self-test` offline.
+acceptance result. Run `uv run scripts/run_p4_live.py --self-test` offline.

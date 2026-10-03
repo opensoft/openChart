@@ -57,8 +57,18 @@ class LiveRunnerSafety(unittest.TestCase):
             for marker in ["SYN-PRIVATE-PATIENT", "SYN-PRIVATE-MEDICATION", "SYN-PRIVATE-RESPONSE", "SYN-PRIVATE-URL", "SYN-SECRET-COOKIE"]:
                 self.assertNotIn(marker, text)
             event = json.loads(text)
+            self.assertEqual(event["request"]["body_sha256"], hashlib.sha256(json.dumps(request).encode()).hexdigest())
             self.assertFalse(event["payloads_recorded"])
             self.assertEqual(event["response"]["body_sha256"], hashlib.sha256(response).hexdigest())
+
+    def test_identity_evidence_does_not_retain_response_headers(self):
+        reply = runner.HttpReply({"version": "SYN-VERSION"}, {"Set-Cookie": "SYN-SECRET-COOKIE", "Proxy-Authorization": "SYN-SECRET-TOKEN"})
+        client = SimpleNamespace(method=lambda *_args: reply, _config=configuration("http://localhost"))
+        identity = runner.probe_identity(client)
+        text = json.dumps(identity)
+        self.assertNotIn("SYN-SECRET-COOKIE", text)
+        self.assertNotIn("SYN-SECRET-TOKEN", text)
+        self.assertNotIn("response_headers", identity)
 
     def test_redirect_is_refused_without_a_second_authenticated_request(self):
         RedirectServer.observed = []

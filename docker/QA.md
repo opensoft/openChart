@@ -78,3 +78,5 @@ variables as defaults. Explicit `OC_API_KEY`, `OC_API_SECRET` and `OC_SITE`
 values take precedence. Load the protected credential file into the runner's
 environment without shell tracing or printing it. The isolated `uv run` path
 installs its declared PyYAML dependency; offline self-test opens no sockets.
+
+Recovery records omit response headers; exact original historical bytes remain in the private cleanup checkpoint. Offline `uv run` needs PyYAML already cached when package-network access is unavailable.

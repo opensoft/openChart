@@ -7,6 +7,7 @@ APP_SRC=/workspace/open_chart
 DATA_DIR=/home/frappe/qa-data
 SITES_DIR=/home/frappe/qa-sites
 BENCH_DIR="$DATA_DIR/frappe-bench"
+BENCH_READY_MARKER="$DATA_DIR/.qa-bench-ready"
 CREDENTIALS_FILE="$SITES_DIR/qa-credentials.env"
 SITE_READY_MARKER="$SITES_DIR/$SITE/.qa-site-ready"
 QA_ADMIN_PASSWORD=${QA_ADMIN_PASSWORD:-oc-qa-admin}
@@ -40,10 +41,11 @@ esac
 export PATH="$PY311_ROOT:$PATH"
 
 step "bench init (frappe version-15)"
-if [ ! -x "$BENCH_DIR/env/bin/python" ]; then
+if [ ! -x "$BENCH_DIR/env/bin/python" ] || [ ! -f "$BENCH_READY_MARKER" ]; then
   rm -rf "$BENCH_DIR"
   bench init --skip-redis-config-generation --frappe-branch version-15 \
     --python "$PY" "$BENCH_DIR"
+  touch "$BENCH_READY_MARKER"
 else
   echo "OC-QA-SKIP: bench already initialized"
 fi
@@ -81,11 +83,13 @@ step "site qa.localhost"
 if [ -d "$SITES_DIR/$SITE" ] && [ ! -f "$SITES_DIR/$SITE/site_config.json" ]; then
   echo "OC-QA-RECOVER: removing site directory left incomplete by an interrupted new-site"
   rm -rf "$SITES_DIR/$SITE"
+  rm -f "$CREDENTIALS_FILE"
 fi
 if [ -f "$SITES_DIR/$SITE/site_config.json" ] && [ ! -f "$SITE_READY_MARKER" ]; then
   echo "OC-QA-RECOVER: removing incomplete site from an interrupted initialization"
   bench drop-site "$SITE" --force --no-backup --db-root-password "$QA_DB_ROOT_PASSWORD" || true
   rm -rf "$SITES_DIR/$SITE"
+  rm -f "$CREDENTIALS_FILE"
 fi
 if [ ! -f "$SITES_DIR/$SITE/site_config.json" ]; then
   bench new-site "$SITE" --admin-password "$QA_ADMIN_PASSWORD" \
@@ -98,7 +102,7 @@ else
 fi
 bench use "$SITE"
 
-step "open_chart from pinned checkout (worktree-safe copy)"
+step "open_chart from the mounted checkout (worktree-safe copy)"
 # The bench runs THIS copy, not the mounted read-only repo: refresh it every
 # boot so post-install source edits reach the site (stale-copy trap observed
 # 2026-08-26: a code fix never reached gunicorn because the copy was skipped).

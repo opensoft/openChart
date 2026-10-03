@@ -185,7 +185,7 @@ class HttpClient:
             "request": {
                 "at": started,
                 "method": "POST",
-                "body_sha256": hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest(),
+                "body_sha256": hashlib.sha256(json.dumps(body).encode()).hexdigest(),
             },
             "response": {
                 "at": utc_now(),
@@ -223,7 +223,6 @@ def probe_identity(client: HttpClient) -> JsonObject:
         "status": "observed",
         "apps": reply.payload,
         "revision": "unknown_unless_reported_by_probe",
-        "response_headers": reply.headers,
     }
 
 
