@@ -40,6 +40,18 @@ case "$PY311_ROOT" in
 esac
 export PATH="$PY311_ROOT:$PATH"
 
+step "Node and Yarn from the bench image"
+# The root entrypoint changes user with a preserved environment. Restore
+# the image's declared Node toolchain when that environment lost its PATH.
+if ! command -v yarn >/dev/null 2>&1 && [ -s "$HOME/.nvm/nvm.sh" ]; then
+  set +u
+  . "$HOME/.nvm/nvm.sh"
+  nvm use --silent default
+  set -u
+fi
+command -v node >/dev/null
+command -v yarn >/dev/null
+
 step "bench init (frappe version-15)"
 if [ ! -x "$BENCH_DIR/env/bin/python" ] || [ ! -f "$BENCH_READY_MARKER" ]; then
   rm -rf "$BENCH_DIR"
