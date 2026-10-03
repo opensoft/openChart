@@ -9,6 +9,7 @@
 validate:
 	python3 scripts/validate.py
 	python3 scripts/harness.py
+	python3 -m unittest discover -s tests -p "test_live_runner*.py"
 
 validate-docker:
 	# teardown runs whether the suite passes or fails — a stale bench
