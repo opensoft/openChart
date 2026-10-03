@@ -39,7 +39,7 @@ from pathlib import Path
 from typing import Final, TypeAlias
 from urllib.error import HTTPError, URLError
 from urllib.parse import quote
-from urllib.request import Request, urlopen
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 ROOT: Final = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
@@ -120,6 +120,13 @@ class HttpReply:
     headers: dict[str, str]
 
 
+class _RejectRedirects(HTTPRedirectHandler):
+    """Do not forward endpoint-scoped credentials to a redirect target."""
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
 class HttpClient:
     def __init__(self, config: Config, raw_path: Path):
         self._config = config
@@ -138,7 +145,7 @@ class HttpClient:
         request = Request(url, data=json.dumps(body).encode(), headers=headers, method="POST")
         started = utc_now()
         try:
-            with urlopen(request, timeout=TIMEOUT_SECONDS) as response:  # noqa: S310
+            with build_opener(_RejectRedirects()).open(request, timeout=TIMEOUT_SECONDS) as response:  # noqa: S310
                 raw = response.read()
                 status = response.status
                 response_headers = dict(response.headers.items())
@@ -175,24 +182,25 @@ class HttpClient:
     ) -> None:
         event = {
             "step": step,
-            "request": {"at": started, "method": "POST", "url": url, "body": body},
+            "request": {
+                "at": started,
+                "method": "POST",
+                "body_sha256": hashlib.sha256(json.dumps(body, sort_keys=True).encode()).hexdigest(),
+            },
             "response": {
                 "at": utc_now(),
                 "status": status,
-                "headers": headers,
-                "body": raw.decode(errors="replace"),
+                "body_sha256": hashlib.sha256(raw).hexdigest(),
+                "bytes": len(raw),
             },
+            "payloads_recorded": False,
         }
         with self._raw_path.open("a", encoding="utf-8") as handle:
             handle.write(json.dumps(event, sort_keys=True) + "\n")
 
     @staticmethod
     def _error_detail(raw: bytes) -> str:
-        try:
-            decoded: JsonValue = json.loads(raw.decode())
-        except (UnicodeDecodeError, json.JSONDecodeError):
-            return raw.decode(errors="replace")[:500]
-        return json.dumps(decoded, sort_keys=True)[:1000]
+        return "HTTP endpoint refused the request; response payload omitted"
 
 
 def assertion(results: list[JsonObject], name: str, passed: bool, method: str, observed: JsonValue) -> None:
@@ -340,7 +348,7 @@ def write_evidence(config: Config, run_id: str, started: str, raw_path: Path) ->
         "component": "p4-expanded-patient-intake-foundation",
         "base_url": config.base_url,
         "deployed_identity": identity,
-        "auth": {"mode": "frappe_token", "role": "System Manager", "user": "qa-runner@qa.localhost", "credentials_recorded": False},
+        "auth": {"mode": "frappe_token", "role": "unobserved", "user": "unobserved", "credentials_recorded": False},
         "scenario_corpus": scenario_corpus(),
         "collection_context": {
             "started_at": started,
