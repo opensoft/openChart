@@ -156,6 +156,36 @@ class LiveRunnerSafety(unittest.TestCase):
             self.assertNotIn("SYN-PRIVATE", str(raised.exception))
             self.assertEqual(json.loads(path.read_text())["response"]["status"], 503)
 
+    def test_retained_pass_evidence_omits_headers_and_requires_external_identity(self):
+        with tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
+            root = Path(directory)
+            stack.enter_context(mock.patch.object(runner, "ROOT", root))
+            if hasattr(runner, "SPEC_ROOT"):
+                stack.enter_context(mock.patch.object(runner, "SPEC_ROOT", root))
+            stack.enter_context(mock.patch.object(runner, "scenario_corpus", return_value=[]))
+            reply = runner.HttpReply({"app": "SYN-VERSION"}, {"Set-Cookie": "SYN-COOKIE", "Proxy-Authorization": "SYN-TOKEN"})
+            stack.enter_context(mock.patch.object(runner.HttpClient, "method", return_value=reply))
+            if hasattr(runner, "engine"):
+                stack.enter_context(mock.patch.object(runner.engine, "load_yaml", return_value={"pin": {}}))
+                stack.enter_context(mock.patch.object(runner, "previous_successor_receipts", return_value=set()))
+            def execute(client, *args):
+                client._log("SYN-PASS", "http://localhost", {}, "2026-10-03T00:00:00Z", 200, reply.headers, b"{}")
+                results = next(value for value in args if isinstance(value, list))
+                results.append({"id": "SYN-PASS", "result": "PASS"})
+                return {}
+            stack.enter_context(mock.patch.object(runner, "execute", side_effect=execute))
+            config = configuration("http://localhost")
+            if "p6" in RUNNER.name:
+                config = SimpleNamespace(healthlinc=config, openchart=config)
+            self.assertEqual(runner.write_evidence(config, "SYN-RUN", "2026-10-03T00:00:00Z", root / "var/SYN-RUN/http.jsonl"), 0)
+            text = next(root.glob("specs/*/live-evidence/*/evidence.yaml")).read_text()
+            self.assertNotIn("SYN-COOKIE", text)
+            self.assertNotIn("SYN-TOKEN", text)
+            self.assertNotIn("response_headers", text)
+            evidence = json.loads(text)
+            self.assertEqual(evidence["verdict"], "PASS")
+            self.assertFalse(evidence["feeds_acceptance_report"])
+
 
 if __name__ == "__main__":
     unittest.main()
