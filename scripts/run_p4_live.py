@@ -1,7 +1,7 @@
 #!/usr/bin/env -S uv run --script
 # /// script
 # requires-python = ">=3.11"
-# dependencies = []
+# dependencies = ["PyYAML>=6.0,<7"]
 # ///
 # noqa: SIZE_OK — one auditable, standalone live-scenario driver.
 
@@ -102,15 +102,15 @@ class Config:
 
     @classmethod
     def from_env(cls) -> "Config":
-        key = os.environ.get("OC_API_KEY", "").strip()
-        secret = os.environ.get("OC_API_SECRET", "").strip()
+        key = (os.environ.get("OC_API_KEY") or os.environ.get("QA_API_KEY", "")).strip()
+        secret = (os.environ.get("OC_API_SECRET") or os.environ.get("QA_API_SECRET", "")).strip()
         if not key or not secret:
             raise RunnerError("configuration", "OC_API_KEY and OC_API_SECRET are required")
         return cls(
             base_url=os.environ.get("OC_BASE", "http://localhost:8001").rstrip("/"),
             api_key=key,
             api_secret=secret,
-            site=os.environ.get("OC_SITE") or None,
+            site=os.environ.get("OC_SITE") or os.environ.get("QA_SITE") or None,
         )
 
 

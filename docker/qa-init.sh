@@ -123,6 +123,7 @@ umask 077
 ./env/bin/python <<'PY'
 import os
 import shlex
+import tempfile
 
 import frappe
 
@@ -170,10 +171,12 @@ try:
             "QA_API_KEY": api_key,
             "QA_API_SECRET": api_secret,
         }
-        with open(credentials_file, "w", encoding="utf-8") as handle:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=os.path.dirname(credentials_file), prefix=".qa-credentials-", delete=False) as handle:
+            temporary_credentials = handle.name
             for key, value in values.items():
                 handle.write(f"{key}={shlex.quote(value)}\n")
-        os.chmod(credentials_file, 0o600)
+        os.chmod(temporary_credentials, 0o600)
+        os.replace(temporary_credentials, credentials_file)
         print(f"OC-QA-CREDENTIALS: wrote {credentials_file}")
     else:
         user.save(ignore_permissions=True)

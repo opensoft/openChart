@@ -32,10 +32,11 @@ The tier-1 verdict above ran inside a throwaway bench that tears down
 after every pass. The claim boundary's live half is now ALSO executed
 against a persistent local QA deployment (`docker/qa-compose.yaml`, see
 `docker/QA.md`): one long-lived Frappe v15 site serving this repository
-at its pinned checkout, reached over HTTP with token auth as a System
+from the mounted checkout (the historical evidence records its revision as
+unknown), reached over HTTP with token auth as a System
 Manager API user.
 
-Runner: `scripts/run_p4_live.py` (stdlib-only; env contract
+Runner: `scripts/run_p4_live.py` (declares PyYAML for isolated `uv run`; env contract
 `OC_API_KEY`/`OC_API_SECRET`, optional `OC_BASE`/`OC_SITE`). It replays
 the SAME assertion sequence as the bench test over the published HTTP
 surface — `/api/method/open_chart.api.v1.{submit,amend,read_submission}`
@@ -44,7 +45,8 @@ plus DocType-REST creation of the fresh synthetic patient.
 Run `p4-20260826T072634Z`: **PASS** (verdict computed all-or-nothing;
 `evidence_provenance: live_qa`). Evidence:
 `specs/001-expanded-patient-intake/live-evidence/p4-20260826T072634Z-3794684/evidence.yaml`;
-raw request/response JSONL under gitignored `var/`.
+historical raw request/response JSONL under gitignored `var/`; the recovered
+runner now retains metadata and hashes only.
 
 Observed deployed identity (probe recorded in evidence): frappe
 15.118.0, open_chart 0.1.0. Boundary unchanged: a PASS proves the named

@@ -70,3 +70,11 @@ skip existing bench/site/app/user work and still run migrations.
 This is a persistent **synthetic QA** deployment for real-system test runs. It
 is not production, is not hardened for remote exposure, and must contain no
 real PHI, patient uploads, production credentials, or decrypted clinical data.
+
+## Live runner credentials
+
+The runner accepts the generated `QA_API_KEY`, `QA_API_SECRET` and `QA_SITE`
+variables as defaults. Explicit `OC_API_KEY`, `OC_API_SECRET` and `OC_SITE`
+values take precedence. Load the protected credential file into the runner's
+environment without shell tracing or printing it. The isolated `uv run` path
+installs its declared PyYAML dependency; offline self-test opens no sockets.
