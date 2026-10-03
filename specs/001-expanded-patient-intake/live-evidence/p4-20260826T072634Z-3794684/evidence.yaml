@@ -22,15 +22,7 @@
         "version": "0.1.0"
       }
     },
-    "revision": "unknown_unless_reported_by_probe",
-    "response_headers": {
-      "Server": "gunicorn",
-      "Date": "Wed, 26 Aug 2026 07:26:34 GMT",
-      "Connection": "close",
-      "Content-Type": "application/json",
-      "Content-Length": "336",
-      "Set-Cookie": "user_image=; Path=/; SameSite=Lax"
-    }
+    "revision": "unknown_unless_reported_by_probe"
   },
   "auth": {
     "mode": "frappe_token",
