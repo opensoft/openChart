@@ -66,7 +66,10 @@ cd "$BENCH_DIR"
 
 step "persistent sites volume wiring"
 if [ ! -L "$BENCH_DIR/sites" ]; then
-  cp -a "$BENCH_DIR/sites/." "$SITES_DIR/"
+  # Recover an interrupted removal/link step using the retained volume.
+  if [ -d "$BENCH_DIR/sites" ]; then
+    cp -a "$BENCH_DIR/sites/." "$SITES_DIR/"
+  fi
   rm -rf "$BENCH_DIR/sites"
   ln -s "$SITES_DIR" "$BENCH_DIR/sites"
 else

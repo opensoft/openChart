@@ -31,6 +31,7 @@ from __future__ import annotations
 import copy
 import datetime as dt
 import hashlib
+from http.client import HTTPException
 import json
 import os
 import sys
@@ -38,6 +39,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Final, TypeAlias
 from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
 from urllib.parse import quote
 from urllib.request import HTTPRedirectHandler, Request, build_opener
 
@@ -107,11 +109,27 @@ class Config:
         if not key or not secret:
             raise RunnerError("configuration", "OC_API_KEY and OC_API_SECRET are required")
         return cls(
-            base_url=os.environ.get("OC_BASE", "http://localhost:8001").rstrip("/"),
+            base_url=validated_endpoint(os.environ.get("OC_BASE", "http://localhost:8001")),
             api_key=key,
             api_secret=secret,
             site=os.environ.get("OC_SITE") or os.environ.get("QA_SITE") or None,
         )
+
+
+def validated_endpoint(value: str) -> str:
+    """Reject credential-bearing endpoints before requests or retained evidence."""
+    try:
+        endpoint = urlsplit(value)
+        valid = (endpoint.scheme in {"http", "https"} and endpoint.hostname
+                 and endpoint.username is None and endpoint.password is None
+                 and not endpoint.query and not endpoint.fragment
+                 and not any(character.isspace() for character in value))
+        endpoint.port  # Validate the port before execution.
+    except ValueError:
+        valid = False
+    if not valid:
+        raise RunnerError("configuration", "endpoint must be HTTP(S), without credentials, query or fragment")
+    return value.rstrip("/")
 
 
 @dataclass(frozen=True, slots=True)
@@ -129,6 +147,7 @@ class _RejectRedirects(HTTPRedirectHandler):
 
 class HttpClient:
     def __init__(self, config: Config, raw_path: Path):
+        validated_endpoint(config.base_url)
         self._config = config
         self._raw_path = raw_path
         raw_path.parent.mkdir(parents=True, exist_ok=False)
@@ -150,20 +169,23 @@ class HttpClient:
                 status = response.status
                 response_headers = dict(response.headers.items())
         except HTTPError as exc:
-            with exc:
-                raw = exc.read()
-                response_headers = dict(exc.headers.items())
+            try:
+                with exc:
+                    raw = exc.read()
+                    response_headers = dict(exc.headers.items())
+            except (TimeoutError, URLError, HTTPException, OSError):
+                self._log(step, url, body, started, exc.code, {}, b"")
+                raise RunnerError(step, "transport failure reading refusal; payload omitted", exc.code) from None
             self._log(step, url, body, started, exc.code, response_headers, raw)
             raise RunnerError(step, self._error_detail(raw), exc.code) from None
-        except (TimeoutError, URLError) as exc:
-            detail = str(exc.reason) if isinstance(exc, URLError) else str(exc)
-            self._log(step, url, body, started, None, {}, detail.encode())
-            raise RunnerError(step, f"transport failure: {detail}") from None
+        except (TimeoutError, URLError, HTTPException, OSError):
+            self._log(step, url, body, started, None, {}, b"")
+            raise RunnerError(step, "transport failure; payload omitted") from None
         self._log(step, url, body, started, status, response_headers, raw)
         try:
             decoded: JsonValue = json.loads(raw.decode())
-        except (UnicodeDecodeError, json.JSONDecodeError) as exc:
-            raise RunnerError(step, f"non-JSON response: {exc}", status) from None
+        except (UnicodeDecodeError, json.JSONDecodeError):
+            raise RunnerError(step, "non-JSON response; payload omitted", status) from None
         return HttpReply(require_object(decoded, step), response_headers)
 
     def method(self, step: str, method: str, body: JsonObject) -> HttpReply:
@@ -361,7 +383,8 @@ def write_evidence(config: Config, run_id: str, started: str, raw_path: Path) ->
         "verdict": "PASS" if passed else "FAIL",
         "failure": error,
         "evidence_provenance": "live_qa",
-        "feeds_acceptance_report": True,
+        "feeds_acceptance_report": False,
+        "acceptance_identity_status": "unverified: a version-only probe does not attest deployed source revisions",
         "claim_boundary": "A PASS proves the named p4 scenario assertions on one local synthetic QA deployment over its real Frappe HTTP/API/DocType path. It is not clinical validation, production security/performance/availability evidence, or proof of production deployment posture.",
     }
     (evidence_dir / "evidence.yaml").write_text(json.dumps(evidence, indent=2, sort_keys=False) + "\n", encoding="utf-8")

@@ -80,3 +80,11 @@ environment without shell tracing or printing it. The isolated `uv run` path
 installs its declared PyYAML dependency; offline self-test opens no sockets.
 
 Recovery records omit response headers; exact original historical bytes remain in the private cleanup checkpoint. Offline `uv run` needs PyYAML already cached when package-network access is unavailable.
+
+New standalone runner records are diagnostic scenario evidence and set
+`feeds_acceptance_report: false`. A Frappe version probe does not attest exact
+deployed source commits or the internal adapter route. Verify those separately
+from the deployed source/configuration before using a record for acceptance;
+a scenario PASS alone does not supply that provenance. Endpoint URLs must not
+contain userinfo, query tokens or fragments. Plain HTTP is limited to the
+synthetic QA topology described here; production transport is outside this gate.

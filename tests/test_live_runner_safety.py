@@ -1,5 +1,10 @@
 """Retained QA logs exclude payloads and tokens; redirects cannot replay auth."""
 import hashlib
+from contextlib import ExitStack
+from http.client import RemoteDisconnected, IncompleteRead
+import os
+from unittest import mock
+from urllib.error import HTTPError
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import json
@@ -87,6 +92,69 @@ class LiveRunnerSafety(unittest.TestCase):
             server.shutdown()
             server.server_close()
             thread.join()
+
+    def test_credential_bearing_endpoints_are_rejected_before_logging(self):
+        for url in ["http://SYN-USER:SYN-SECRET@localhost", "http://localhost?token=SYN-SECRET", "http://localhost#SYN-SECRET", "http://localhost:invalid", "file:///tmp/local"]:
+            with self.subTest(url=url), tempfile.TemporaryDirectory() as directory:
+                path = Path(directory) / "records/http.jsonl"
+                with self.assertRaises(runner.RunnerError) as raised:
+                    runner.HttpClient(configuration(url), path)
+                self.assertNotIn("SYN-SECRET", str(raised.exception))
+                self.assertFalse(path.exists())
+
+    def test_environment_rejects_credential_bearing_endpoint(self):
+        env = {key: "SYN-VALUE" for key in ["HL_API_KEY", "HL_API_SECRET", "OC_API_KEY", "OC_API_SECRET", "EHR_API_KEY", "EHR_API_SECRET"]}
+        keys = ["HL_BASE", "OC_BASE"] if "p6" in RUNNER.name else ["OC_BASE"] if "p4" in RUNNER.name else ["EHR_BASE"]
+        for key in keys:
+            with self.subTest(key=key), mock.patch.dict(os.environ, {**env, key: "http://localhost?token=SYN-SECRET"}, clear=True):
+                with self.assertRaises(runner.RunnerError):
+                    runner.Config.from_env()
+
+    def test_disconnect_and_truncated_body_produce_retained_fail_evidence(self):
+        for failure in [RemoteDisconnected("SYN-PRIVATE"), IncompleteRead(b"SYN-PRIVATE", 50)]:
+            with self.subTest(kind=type(failure).__name__), tempfile.TemporaryDirectory() as directory, ExitStack() as stack:
+                root = Path(directory)
+                stack.enter_context(mock.patch.object(runner, "ROOT", root))
+                if hasattr(runner, "SPEC_ROOT"):
+                    stack.enter_context(mock.patch.object(runner, "SPEC_ROOT", root))
+                stack.enter_context(mock.patch.object(runner, "scenario_corpus", return_value=[]))
+                stack.enter_context(mock.patch.object(runner, "probe_identity", return_value={"status": "unobserved"}))
+                if hasattr(runner, "engine"):
+                    stack.enter_context(mock.patch.object(runner.engine, "load_yaml", return_value={"pin": {}}))
+                    stack.enter_context(mock.patch.object(runner, "previous_successor_receipts", return_value=set()))
+                def execute(client, *_args):
+                    return client.request("SYN-DISCONNECT", "/api/method/synthetic", {})
+                stack.enter_context(mock.patch.object(runner, "execute", side_effect=execute))
+                opener = mock.Mock()
+                opener.open.side_effect = failure
+                stack.enter_context(mock.patch.object(runner, "build_opener", return_value=opener))
+                config = configuration("http://localhost")
+                if "p6" in RUNNER.name:
+                    config = SimpleNamespace(healthlinc=config, openchart=config)
+                result = runner.write_evidence(config, "SYN-RUN", "2026-10-03T00:00:00Z", root / "var/SYN-RUN/http.jsonl")
+                self.assertEqual(result, 2)
+                evidence = json.loads(next(root.glob("specs/*/live-evidence/*/evidence.yaml")).read_text())
+                self.assertEqual(evidence["verdict"], "FAIL")
+                self.assertFalse(evidence["feeds_acceptance_report"])
+                self.assertEqual(evidence["assertions"][-1]["id"], "SYN-DISCONNECT")
+                self.assertNotIn("SYN-PRIVATE", json.dumps(evidence))
+
+    def test_error_response_read_failure_is_typed_and_logged(self):
+        class BrokenBody:
+            closed = False
+            def read(self, *_args):
+                raise TimeoutError("SYN-PRIVATE")
+            def close(self):
+                pass
+        with tempfile.TemporaryDirectory() as directory, mock.patch.object(runner, "build_opener") as builder:
+            builder.return_value.open.side_effect = HTTPError("http://localhost", 503, "unavailable", {}, BrokenBody())
+            path = Path(directory) / "records/http.jsonl"
+            client = runner.HttpClient(configuration("http://localhost"), path)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with self.assertRaises(runner.RunnerError) as raised:
+                client.request("SYN-ERROR-READ", "/api/method/synthetic", {})
+            self.assertNotIn("SYN-PRIVATE", str(raised.exception))
+            self.assertEqual(json.loads(path.read_text())["response"]["status"], 503)
 
 
 if __name__ == "__main__":
