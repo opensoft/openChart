@@ -110,3 +110,10 @@ Licensed under the [Apache License 2.0](LICENSE).
 
 Never commit real patient information, credentials, decrypted clinical
 records, wallet secrets, or encryption keys to this repository.
+
+## Recovered live QA tools
+
+[Persistent synthetic QA procedure](docker/QA.md) and
+[historical p4 scenario record](specs/001-expanded-patient-intake/scenario-live-half.md).
+The August 2026 evidence is retained as captured; recovery is not a new live
+acceptance result. Run `python3 scripts/run_p4_live.py --self-test` offline.

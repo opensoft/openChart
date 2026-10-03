@@ -1,0 +1,68 @@
+name: open-chart-qa
+
+services:
+  db:
+    image: mariadb:10.6.27
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      - --skip-character-set-client-handshake
+      - --skip-innodb-read-only-compressed
+    environment:
+      MYSQL_ROOT_PASSWORD: ${QA_DB_ROOT_PASSWORD:-oc-qa-root}
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-p${QA_DB_ROOT_PASSWORD:-oc-qa-root}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    restart: unless-stopped
+    volumes:
+      - qa-db:/var/lib/mysql
+
+  redis-cache:
+    image: redis:6.2-alpine
+    restart: unless-stopped
+
+  redis-queue:
+    image: redis:6.2-alpine
+    restart: unless-stopped
+
+  bench:
+    image: frappe/bench:v5.31.0
+    user: root
+    depends_on:
+      db:
+        condition: service_healthy
+      redis-cache:
+        condition: service_started
+      redis-queue:
+        condition: service_started
+    environment:
+      QA_ADMIN_PASSWORD: ${QA_ADMIN_PASSWORD:-oc-qa-admin}
+      QA_DB_ROOT_PASSWORD: ${QA_DB_ROOT_PASSWORD:-oc-qa-root}
+    volumes:
+      - ..:/workspace/open_chart:ro
+      - qa-home:/home/frappe/qa-data
+      - qa-sites:/home/frappe/qa-sites
+    working_dir: /home/frappe
+    command:
+      - bash
+      - -lc
+      - |
+        chown frappe:frappe /home/frappe/qa-data /home/frappe/qa-sites
+        exec su --preserve-environment --shell /bin/bash frappe --command \
+          'export HOME=/home/frappe; export PATH=/home/frappe/.local/bin:$$PATH; /workspace/open_chart/docker/qa-init.sh && cd /home/frappe/qa-data/frappe-bench && exec ./env/bin/gunicorn --chdir sites --bind 0.0.0.0:8000 --workers 2 --threads 4 --timeout 120 frappe.app:application'
+    ports:
+      - "127.0.0.1:8001:8000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent --show-error --header 'Host: qa.localhost' http://127.0.0.1:8000/api/method/ping >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 15m
+    restart: unless-stopped
+
+volumes:
+  qa-db:
+  qa-home:
+  qa-sites:
