@@ -16,7 +16,9 @@ commit of each leg this project currently IS, and the gate that checks them.
 **Work from here, not from a leg clone.** An agent standing in a leg clone can
 see neither the manifest nor the other leg, so it is reading half a project and
 cannot advance it at all. `git clone --recurse-submodules` this repository and
-run `make bootstrap`.
+run `make bootstrap`; where the root keeps a `GNUmakefile` or a `makefile`,
+which GNU make reads before `Makefile`, run `python3 scripts/bootstrap.py`
+(`python` on Windows), which is what the shape's `make bootstrap` runs.
 
 ## Advancing a leg is ONE commit here
 
@@ -77,8 +79,19 @@ row: they are this project's own content, and yours to edit.
 A contract the code READS but does not OWN lives in the SPEC leg. That was
 ruled and measured on the MedxEHR conversion: `contracts/` moved to the spec
 leg, and the code leg's tooling now takes `CONTRACTS_DIR` from the environment
-— the root Makefile exports `$(CURDIR)/spec/contracts` once — rather than each
-script guessing at `../`.
+rather than each script guessing at `../`. Where this root was ADOPTED, the
+shape's Makefile exports `CONTRACTS_DIR` once, as the `contracts/` of the spec
+leg at the path `project.yaml` mounts it, and `make contracts-dir` prints it
+wherever `make` reads that Makefile. GNU make reads the first of `GNUmakefile`,
+`makefile` and `Makefile` it finds, and only that one. Where the source kept a
+Makefile of its own, that block waits in `shape/Makefile` until the two are
+merged. Where the source kept a `GNUmakefile` or a `makefile`, beside a
+`Makefile` or instead of one, `make` at the root reads the first of them, and
+not the shape's Makefile unless that file includes it, so `make contracts-dir`
+has no rule there until that file holds the block, or includes a Makefile that
+does. A SCAFFOLDED
+root's Makefile exports none: its legs start from the scaffold's seed, with no
+`contracts/`, so nothing reads across them yet.
 
 ## The five commands
 
@@ -92,8 +105,13 @@ make park        commit, push and RECORD every open feature, so another
 make resume      recreate the parked features here, from that record
 ```
 
-`make bootstrap` places each leg on its tracking branch AT the pin where that
-loses no commit, and leaves one detached at any other commit, saying why. The
+They are the shape's Makefile's targets, so `make` at the root reaches them
+only where the file it reads first holds them, or includes a Makefile that
+does; `python3 scripts/bootstrap.py` (`python` on Windows) is what
+`make bootstrap` runs.
+
+`make bootstrap` places a leg on its tracking branch AT the pin only where that
+loses no commit, and otherwise leaves its checkout where it is, saying why. The
 line `authority is not wallet-carried in this org` is a report, not a fault.
 
 **`make park` BEFORE the human leaves a workstation; on the next one, clone,

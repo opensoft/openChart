@@ -65,12 +65,66 @@ PATH is read for none of them. A value that names no path — `PRODUCT=`, or an
 empty one — is refused (#442): an empty path is the current directory, and
 `.` is how to mean that.
 
+A KEY IS THE LONGEST LINK A VALUE NAMES (#980). The text before an `=` is a
+link only where it names a link of a chain this run reads, and of those
+texts the longest that leaves a path after it is the key, so a link holding
+`=` is one: `open=y=<path>`, the source the `declared-unverified` WARNING
+offers `open=y`, is that link's tree, where the first `=` made it a bare
+PATH. The key is the whole text before its `=`, never stripped or cut at a
+`/`, so `./` before a value still asks for the directory it spells, and
+`<link>=./<path>` gives a link a path that begins like a longer link's
+name. A value that ends at a link, `open=y=`, names no path and is refused,
+as `PRODUCT=` is.
+
+A CALLER THAT PASSES A SOURCE FOR SOMEONE ELSE SAYS IT IN ITS OWN WORDS
+(#661). `--link-source-label=FLAG` is the flag the person typed for the bare
+PATH (setup's step (4) passes `--pin-source`): the `link-source-unreadable`
+WARNING and the "not used" NOTE name that value by FLAG, and neither says a
+value holding `=` was read as a PATH. The `link-source-no-path` REFUSED
+line, and the NOTE's advice to name the link (`--link-source <link>=PATH`)
+where the chains begin at more than one link, keep this script's own flag.
+`--link-remedy LINK=TEXT` is what would let LINK's tree be read in that
+caller's sources, offered in place of this script's own for a link that is
+declared-unverified. LINK is the longest text before an `=` that names a
+link of a chain this run reads and leaves words after it (#907), so a link
+holding `=` keeps it, and the words are stripped. Its owner, the text
+before its last `/`, holds no `=` (#991): no owner is spelled with one, so
+`openXdox=a/openYdox=b` gives `openXdox` the words `a/openYdox=b`, and
+`opensoft/open=y=TEXT` still gives `open=y` the words. A `--link-source`
+key is read the same way (#980), but whole, as the paragraph above says.
+A `--link-remedy` no holder used is a NOTE saying
+why, except where the caller gave a label: its words are its own, not the
+person's. A project's own runs pass neither.
+Every `--link-source` and `--link-remedy` value and path this prints, and
+the path of a `SHAPE_PIN_SOURCE_<PRODUCT>` or of a checkout beside the
+project it names, is named as it is, or as Python's `repr` spells it where a
+character in it is not printable (`_shown`). The one exception is the WORDS of
+a `--link-remedy` where a `declared-unverified` WARNING offers them: they stand
+inside its sentence and are spelled with it, as the next paragraph says, so a
+TAB or an ESC in them is `\\t` or `\\x1b`, without quotes. A caller's FLAG and
+the `--project` and `--policy` paths are printed as given.
+Every name this classifies or refuses is `repo_shape.spelled` (#1267): in the
+plain listing, in `--explain`, in the `naming-unclassified` and role
+findings, and in a WARNING, a broken-chain finding or an `--explain` line
+whose sentence quotes it. A sentence that quotes a name is spelled WHOLE, so
+a chain link or the words a caller offers for one (`--link-remedy`) inside it
+is spelled too. A chain link that stands outside such a sentence is printed
+as given: in the `CHAIN` line, in `link-source-unreadable` and in the NOTEs
+that name one. A line feed, an ESC or another control in a name is written as
+the escape Python spells it (`Atlas\\n`), so a name stays on its line, a
+listing holds one row per name with its columns where a plain name's are, and
+a finding for `Atlas` plus a line feed cannot read as one for `Atlas`. A name
+with no such character prints as it did. `spelled` is in every
+`scripts/repo_shape.py` this file can meet, unlike `shown_path`.
+
 EXIT CODES, the same three in every validator this standard ships:
     0  every name classified (and, with `--project`, every declared role and
        the topic agreed with the classification)
     1  a FINDING: at least one name matches no family, or a leg's declared role
        disagrees with the form of its name, or (#443) `neutral_product_pins:`
-       or a leg's `naming.referent_chain:` is not a list
+       or a leg's `naming.referent_chain:` is not a list, or (#714) `legs:`
+       is missing, empty or not a list, or an entry of the first two is not
+       a name
     2  a REFUSAL: the question could not be asked at all — the policy file is
        missing, unparsable, or not a naming policy, or a `--link-source`
        names no path
@@ -84,7 +138,11 @@ there and still cannot answer. An explicit source stays a warning here, where
 answers that validator's digest question too, from a checkout that need not
 carry a manifest, and a source that cannot answer is passed over for the next
 one in the order, which may. A `--link-source` no link used is a NOTE saying
-why.
+why, and so is a `--link-remedy` no holder used (#907). So is a
+`SHAPE_PIN_SOURCE_<PRODUCT>` that is set and is read for no link because
+two products this run reads share it (#275, #909): one
+`link-source-collides` NOTE names it and the products, except where the
+caller gave a label (#990).
 
 The 1/2 split is deliberate. "This name is wrong" and "I could not read the
 policy" are different facts and a gate that renders them identically invites a
@@ -94,18 +152,154 @@ workflow that treats the second as the first.
 from __future__ import annotations
 
 import argparse
+import inspect
 import os
 import sys
+import unicodedata
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from repo_shape import (  # noqa: E402
     CHAIN_RECORD_FIELD, LINK_SOURCE_ABSENT, LINK_SOURCE_NO_MANIFEST,
     UNAMBIGUOUS_FORMS, Classification, NamingPolicy, Refusal,
-    link_pins_from_trees, load_yaml, pin_product_key, repo_basename,
+    link_pins_from_trees, load_yaml, pin_product_key,
+    pin_source_env_collisions, repo_basename, spelled,
 )
 
 DEFAULT_POLICY = Path(__file__).resolve().parents[1] / "contracts" / "repository-naming.yaml"
+
+#: What the plain listing and `--explain`'s family rows pad a text by (#1217)
+#: is the columns a terminal gives it, not the code points a format width
+#: counts. These general categories take none: a non-spacing mark and an
+#: enclosing one, drawn over the character before them, and a format
+#: character, which is not drawn.
+ZERO_COLUMN_CATEGORIES = frozenset(("Mn", "Me", "Cf"))
+#: The East Asian widths that take two columns: wide and fullwidth.
+TWO_COLUMN_WIDTHS = frozenset(("W", "F"))
+#: The Hangul medial vowels and final consonants, U+1160 to U+11FF and, in
+#: Hangul Jamo Extended-B, U+D7B0 to U+D7FF: letters (Lo) of East Asian width
+#: N, drawn inside the syllable their leading consonant begins, so they take
+#: no column, as glibc's `wcwidth` counts them.
+MEDIAL_AND_FINAL_JAMO = frozenset(map(chr, range(0x1160, 0x1200)))
+MEDIAL_AND_FINAL_JAMO_EXTENDED_B = frozenset(map(chr, range(0xD7B0, 0xD800)))
+
+
+def _shown(path) -> str:
+    """A path as a line about it names it: as it is, unless a character in
+    it is not printable (`str.isprintable`), and then as Python's `repr`
+    spells it (#610). It is `repo_shape.shown_path`, which spells the
+    manifest in a `link-source-unreadable` reason, so one line holds one
+    spelling. Written here rather than imported: this file is copied into
+    every project and may meet a `scripts/repo_shape.py` older than itself,
+    which has no such name, and the gate would end in an `ImportError` before
+    it classified a name."""
+    text = str(path)
+    return text if text.isprintable() else repr(text)
+
+
+def _char_columns(char: str) -> int:
+    """How many columns a terminal draws `char` in: 0, 1 or 2. The category
+    comes first, since the voiced sound mark U+3099 is wide and still drawn
+    over the kana it follows; an ambiguous width takes one, as a terminal
+    outside an East Asian locale draws it."""
+    if (unicodedata.category(char) in ZERO_COLUMN_CATEGORIES
+            or char in MEDIAL_AND_FINAL_JAMO
+            or char in MEDIAL_AND_FINAL_JAMO_EXTENDED_B):
+        return 0
+    if unicodedata.east_asian_width(char) in TWO_COLUMN_WIDTHS:
+        return 2
+    return 1
+
+
+def _columns(text: str) -> int:
+    """The columns `text` takes in the listing, character by character."""
+    return sum(_char_columns(char) for char in text)
+
+
+def _padded(text: str, columns: int) -> str:
+    """`text` with spaces after it to fill `columns` columns of a terminal
+    (#1217), where `f"{text:<{columns}}"` filled that many code points: a
+    name of `\\u65e5\\u672c\\u8a9e` took 6 columns and was padded as 3, so
+    its label stood 3 right of `codexGlass`'s, and `e\\u0301cole` took 5,
+    padded as 6, 1 left. A text already wider gets no space and is not cut,
+    as the format width left it. Written here rather than imported, as
+    `_shown` is: a project's `scripts/repo_shape.py` may be older than this
+    copy."""
+    return text + " " * (columns - _columns(text))
+
+
+def _printed(text: str) -> str:
+    """`text` in the characters stdout will write for it, which is what is
+    padded: under `_escape_what_stdout_cannot_encode` a character the
+    encoding lacks goes out as its escape, so on an ASCII stdout the name
+    `\\u65e5\\u672c\\u8a9e` is 18 characters wide, and `Atl\\udcffas`, read
+    from a byte that is not UTF-8, is 11 on a UTF-8 stdout as on an ASCII
+    one. Unchanged where stdout has no encoding or its handler cannot write
+    `text`."""
+    encoding = getattr(sys.stdout, "encoding", None) or "utf-8"
+    errors = getattr(sys.stdout, "errors", None) or "strict"
+    try:
+        return text.encode(encoding, errors).decode(encoding)
+    except (LookupError, UnicodeError):
+        return text
+
+
+def _family_id_padded(family_id) -> str:
+    """A family's id, filling the 18 columns `--explain` gives it. An id is
+    the policy's word, and nothing checks it is ASCII or even text: text is
+    padded by its columns as stdout writes it (`_padded`, `_printed`), and
+    any other value YAML reads there, `5` or `true`, is padded by `format`,
+    so its row prints as it always did."""
+    if isinstance(family_id, str):
+        return _padded(_printed(family_id), 18)
+    return f"{family_id:<18}"
+
+
+def _not_a_name(entry) -> str | None:
+    """Why a `neutral_product_pins:` entry or a `naming.referent_chain:`
+    link is not a name, or None where it is one (#714).
+
+    `validate-manifest.py`'s `_not_a_name`, word for word, so every gate
+    that reads the two fields says one sentence. A name is text
+    (`validate-pins.py`'s `neutral-pin-entry-malformed` asks the same), it
+    is not blank (a blank link was always no link), and every character in
+    it is printable (`str.isprintable`, `_shown`'s rule). `[5]` was the pin
+    `'5'`, and a link holding ESC was a name this gate classified with,
+    exit 0, and printed raw in `--explain`'s CHAIN line."""
+    if not isinstance(entry, str):
+        return "it is not text"
+    if not entry.strip():
+        return "it is blank"
+    if not entry.isprintable():
+        return "it holds a character that is not printable"
+    return None
+
+
+def _library_takes_remedies() -> bool:
+    """Does this root's `scripts/repo_shape.py` take `remedies=`? The
+    skew rule `validate-manifest.py` states (#661): an older library has
+    none, and passing it would end the gate in a `TypeError`."""
+    try:
+        return "remedies" in inspect.signature(
+            link_pins_from_trees).parameters
+    except (TypeError, ValueError):
+        return False
+
+
+def _link_remedy(value: str) -> str:
+    """One `--link-remedy LINK=TEXT`, as typed; a value with no `=`, no
+    link before its first `=` or no words after it is refused, exit 2.
+    WHICH `=` ENDS THE LINK is decided once the chains this run reads are
+    known (`LinkSources._read_remedy`, #907): the last one that leaves a
+    link of theirs before it, with no `=` in its owner (#991), and words
+    after it. A `--link-source` key is found the same way once the chains
+    are known, but whole (`LinkSources._read_source`, #980)."""
+    link, sep, text = value.partition("=")
+    if not (sep and repo_basename(link.strip()) and text.strip()):
+        raise argparse.ArgumentTypeError(
+            f"{_shown(value)} is not LINK=TEXT: name a chain link, then `=`, "
+            "then the words for what would let its tree be read")
+    return value
 
 
 class Target:
@@ -127,6 +321,18 @@ class Target:
         self.root = root
 
 
+def _library_takes(keyword: str) -> bool:
+    """Does this root's `link_pins_from_trees` take `keyword`? The skew rule
+    `_library_takes_remedies` asks of `remedies=`, asked of any keyword:
+    `run_products=` is new with #909, and an older library ends a call passing
+    it in a `TypeError`."""
+    try:
+        return keyword in inspect.signature(
+            link_pins_from_trees).parameters
+    except (TypeError, ValueError):
+        return False
+
+
 class LinkSources:
     """Every `--link-source` value AS TYPED, read against the chain links this
     run names, and what each lookup made of it (#338).
@@ -137,25 +343,21 @@ class LinkSources:
     that a source keyed to a link `a` that no chain names, which no lookup
     ever asked for — the link stayed declared-unverified, exit 0, under a
     WARNING suggesting the very `--link-source` the person had passed. So the
-    text before the first `=` is a LINK only when it names a link of a
-    referent chain this run reads (`--referent-chain`'s, or a leg's
+    text before an `=` is a LINK only when it names a link of a referent
+    chain this run reads (`--referent-chain`'s, or a leg's
     `naming.referent_chain:` under `--project`) by `pin_product_key`, the key
-    the lookup uses, and any other value is a bare PATH, whole. A link's name
+    the lookup uses, and any other value is a bare PATH, whole. Of the texts
+    that do, the longest that leaves a path after it is the key
+    (`_read_source`, #980), so a link may hold an `=`. A link's name
     wins even where a directory is spelled like the whole value: the reading
     is decided by the chains and never by the disk, and `./` asks for the
     directory.
     That is `validate-pins.py`'s reading of `--pin-source` (#295), with a
     chain link where that file has a declared pin, so the two copied tools
-    read `[PRODUCT=]PATH` one way OVER ASCII ONLY (#444). Outside it they part
-    company: `PinSources` (`templates/assembly-root/scripts/validate-pins.py`
-    `:831`, `:845`, `:848-849` and `:912`) still keys `--pin-source PRODUCT=`
-    by `casefold()`, so `--pin-source openss=` answers for a declared `openß`
-    where `--link-source openss=` no longer answers for the link `openß`. It
-    is left, and the issue leaves it as its own change, because a pin's digest
-    stops a wrong source from passing: `validate-pins.py` checks it, a wrong
-    source cannot match it, and so that reading can turn a wrong source into
-    a finding and never into a pass. The follow-up is on #459's checklist
-    (the shipped validators and the helpers they share).
+    read `[PRODUCT=]PATH` one way: both key by `pin_product_key` (#444 here,
+    #712 there), and both read the longest name before an `=` that leaves a
+    path after it, `_read_source` here (#980) and `PinSources._read_source`
+    there (#1053).
 
     WHAT EACH VALUE CAME TO. Every lookup records what it asked
     (`link_pins_from_trees(..., tried=)`), so once every name is classified a
@@ -167,6 +369,16 @@ class LinkSources:
     finding, and none ends the run: a link whose tree could not be read is a
     warning in this validator, deliberately, and an explicit source is no
     exception — the module docstring says why.
+
+    A VARIABLE THE GUARD PASSED OVER IS SAID (#990). A
+    `SHAPE_PIN_SOURCE_<PRODUCT>` two products share is read for neither
+    (#275), and the guard is asked over the chain and every product of the
+    run (#909). It leaves no row in `tried`, so a variable a person set was
+    named by no line, and the `declared-unverified` WARNING, which leaves it
+    out of its offer, read as if nothing were set. `link_pins` keeps each
+    such variable that is set, for a holder it passed over, with the
+    products that share it (`_record_shared_variables`), and `unused_lines`
+    names each once.
 
     ONE VALUE, ONE LINK (#441). A keyed value is asked for its own link
     alone. The bare PATH is asked for the FIRST link of a chain a name here
@@ -189,15 +401,31 @@ class LinkSources:
     products' trees.
     """
 
-    def __init__(self, values: list[str], links, firsts=()) -> None:
+    def __init__(self, values: list[str], links, firsts=(),
+                 label: str | None = None, remedies=()) -> None:
+        #: The caller's own name for the bare PATH it passes, or None
+        #: (`--link-source-label`, #661).
+        self.label = label
         #: Every link of every chain this run reads, in its first spelling.
         self.links: list[str] = []
-        names: dict[str, str] = {}
+        #: `{pin_product_key: first spelling}` of those links.
+        self.names: dict[str, str] = {}
+        names = self.names
         for link in links:
             name = repo_basename(str(link))
             if name and pin_product_key(name) not in names:
                 names[pin_product_key(name)] = name
                 self.links.append(name)
+        #: `{pin_product_key(link): the caller's words}` from
+        #: `--link-remedy`, the last value given for a link wins (#661),
+        #: each read by `_read_remedy` (#907).
+        self.remedies: dict[str, str] = {}
+        #: Every distinct `--link-remedy` value in the order given, and the
+        #: link it was read as for.
+        self.remedy_reading: dict[str, str] = {}
+        #: `{typed: the later value for its link that took its place}`.
+        self.remedy_replaced: dict[str, str] = {}
+        self._read_remedies(remedies)
         #: `{pin_product_key: first spelling}` of the first link of every
         #: chain a name here reads (#441). `link_pins` adds a chain's first
         #: link as it reads it, which matters only for names read from stdin:
@@ -217,8 +445,7 @@ class LinkSources:
         #: `{typed: the later value that took its place}`.
         self.replaced: dict[str, str] = {}
         for typed in values:
-            key, sep, path = typed.partition("=")
-            link = names.get(pin_product_key(key)) if sep else None
+            link, path = self._read_source(typed)
             self.reading[typed] = link
             if link is not None:
                 earlier = self.keyed.get(pin_product_key(link))
@@ -230,10 +457,10 @@ class LinkSources:
             if earlier is not None and earlier[0] != typed:
                 self.replaced[earlier[0]] = typed
         #: The values that name no path (#442), in the order given: a keyed
-        #: value with nothing after its `=`, and an empty bare one.
+        #: value with nothing after its key's `=`, and an empty bare one.
         self.no_path: list[str] = [
-            typed for typed, link in self.reading.items()
-            if not (typed.partition("=")[2] if link is not None else typed)]
+            typed for typed in self.reading
+            if not self._read_source(typed)[1]]
         #: The links some name's lookup asked about, by `pin_product_key`.
         self.asked: set[str] = set()
         #: The values a link read: each the answer for one link (#441).
@@ -244,6 +471,111 @@ class LinkSources:
         #: `{(path, how, why): [links]}` for a `SHAPE_PIN_SOURCE_<PRODUCT>`
         #: or a checkout beside the project that could not answer.
         self.unanswered: dict[tuple, list[str]] = {}
+        #: `{variable: [the products that share it]}` for each
+        #: `SHAPE_PIN_SOURCE_<PRODUCT>` that is set and that a holder's
+        #: lookup passed over (#990), in the order first met.
+        self.shared_variables: dict[str, list[str]] = {}
+
+    def _read_source(self, typed: str) -> tuple[str | None, str]:
+        """`(link, path)` for one `--link-source` value (#980): the link it
+        is keyed to, as the chain spells it, and the text of its path; or
+        `(None, typed)` for a bare PATH, which is the whole value.
+
+        THE LONGEST LINK THAT LEAVES A PATH, as `_read_remedy` finds a
+        remedy's link (#907). The text before an `=` is a link only where
+        it names a link of a chain this run reads, by `pin_product_key`,
+        and the LAST `=` whose text does, with a path after it, ends the
+        key. Read at the first `=`, `open=y=<path>`, the very source the
+        `declared-unverified` WARNING offers `open=y`, was a bare PATH for
+        the chain's first link, since no chain names `open`: typed as
+        printed, it never verified `open=y`. In a chain naming `open` and
+        `open=y` both, `open=y=<path>` is `open=y`'s and `open=<path>` is
+        `open`'s, where the first `=` gave both to `open`, and the later
+        value replaced the earlier one.
+
+        WHOLE, where a remedy's link is not: the key is the text before its
+        `=` as typed, never stripped and never cut at a `/`. A link's name
+        holds no `/` (`repo_basename`), so a text holding one names no
+        link, and `./open=y=x` is the directory it spells, as `./` asks for
+        one under the reading's documented rule (`_also_a_directory`
+        offers it). `open=./y=dir` gives `open` the path `./y=dir` in a
+        chain that names `open=y` too. A blank is a path's, as it always
+        was: ` open=y=x` names no link.
+
+        A VALUE THAT ENDS AT A LINK NAMES NO PATH. Only the last `=` can
+        leave nothing after it. Where its text names a link and no shorter
+        link leaves a path, the value is that link's, with an empty path,
+        and `no_path` refuses it (#442), as it refuses `openXdox=`: read as
+        a bare PATH, `open=y=` would be a tree for the chain's first link,
+        a link the person did not name. A remedy has no path to refuse, so
+        `_read_remedy` reads such a value at its first `=` instead."""
+        at = typed.rfind("=")
+        while at >= 0:
+            link = self.names.get(pin_product_key(typed[:at]))
+            if link is not None and typed[at + 1:]:
+                return link, typed[at + 1:]
+            at = typed.rfind("=", 0, at)
+        if typed.endswith("="):
+            link = self.names.get(pin_product_key(typed[:-1]))
+            if link is not None:
+                return link, ""
+        return None, typed
+
+    def _read_remedy(self, typed: str) -> tuple[str, str]:
+        """`(link, words)` for one `--link-remedy` (#907): the text before
+        an `=` is a LINK only where it names a link of a referent chain this
+        run reads, by `pin_product_key`, and leaves words after it. The LAST
+        `=` that does so ends the link, so the longest link is read first
+        and a link holding `=` keeps it: setup's step (4) gives `open=y` its
+        words as `--link-remedy=open=y=<words>`, and splitting at the first
+        `=` made them `y=<words>` for a link `open` that no chain names. In
+        a chain naming `openXdox` and `openXdox=y` both, each is read for
+        its own words, and from the first `=` `openXdox=y=<words>` was
+        `y=<words>` for `openXdox`. Where no `=` does, the text before the
+        first one is the link, which no chain here names, and `unused_lines`
+        says so. A `--link-source` key is read so too, but whole
+        (`_read_source`, #980). The link is spelled as the chain
+        spells it, and the words are stripped: `openXdox= padded` offered
+        ` padded`.
+
+        AN `=` WHOSE OWNER HOLDS ONE DOES NOT END THE LINK (#991). The link
+        is `repo_basename` of the text before the `=`, what follows its last
+        `/`, so in `openXdox=a/openYdox=b` the last `=` left `openYdox`
+        before it, and `openYdox` was given `b` where the person typed words
+        for `openXdox`. The text before that `/` is the link's owner, and
+        no owner is spelled with an `=`, so such an `=` is passed over:
+        `openXdox` is given `a/openYdox=b`, and `opensoft/open=y=<words>`,
+        whose owner is `opensoft`, still gives `open=y` its words."""
+        at = typed.rfind("=")
+        while at >= 0:
+            link = repo_basename(typed[:at].strip())
+            words = typed[at + 1:].strip()
+            owner = typed[:at].rpartition("/")[0]
+            if words and "=" not in owner and \
+                    pin_product_key(link) in self.names:
+                return self.names[pin_product_key(link)], words
+            at = typed.rfind("=", 0, at)
+        link, _sep, words = typed.partition("=")
+        return repo_basename(link.strip()), words.strip()
+
+    def _read_remedies(self, remedies) -> None:
+        """Fill `remedies`, `remedy_reading` and `remedy_replaced` from the
+        `--link-remedy` values in the order given (NIT-8 on #949, #991),
+        each read by `_read_remedy` against the chain links `__init__` has
+        already named. The last value for a link wins, by `pin_product_key`;
+        a value typed again is the one that wins, and is never said to have
+        been replaced, by another value or by itself."""
+        last: dict[str, str] = {}
+        for typed in remedies:
+            link, words = self._read_remedy(typed)
+            key = pin_product_key(link)
+            self.remedy_reading[typed] = link
+            self.remedies[key] = words
+            earlier = last.get(key)
+            last[key] = typed
+            self.remedy_replaced.pop(typed, None)
+            if earlier is not None and earlier != typed:
+                self.remedy_replaced[earlier] = typed
 
     def link_pins(self, policy: NamingPolicy, target: Target) -> dict:
         """What the chain's links declare, for the links whose trees answer,
@@ -262,10 +594,21 @@ class LinkSources:
             first = repo_basename(str(target.chain[0]))
             self.firsts.setdefault(pin_product_key(first), first)
         tried: dict = {}
+        offered = ({"remedies": self.remedies}
+                   if self.remedies and _library_takes_remedies() else {})
+        # ONE VARIABLE, ONE PRODUCT OF THE RUN (#909). The variable guard is
+        # asked over the declared pins and every chain this run reads, and
+        # not over this target's chain alone: two legs whose chains begin at
+        # `openß` and `openss` read `SHAPE_PIN_SOURCE_OPENSS` for both, and
+        # its one tree broke the chain of the product it is not.
+        if _library_takes("run_products"):
+            offered["run_products"] = [*target.pins, *self.links]
+        self._record_shared_variables(target.chain,
+                                      offered.get("run_products", ()))
         found = link_pins_from_trees(
             target.chain, target.root,
             {key: path for key, (_typed, path) in self.keyed.items()},
-            self._bare_path(), tried=tried)
+            self._bare_path(), tried=tried, **offered)
         # ONLY A LINK THAT HOLDS A PIN COUNTS. The lookup asks for every link,
         # the last one too, but only a holder's own declaration is ever read
         # (`_chain_link_findings`): a source asked only for the chain's end
@@ -280,6 +623,38 @@ class LinkSources:
             for rule, how, path, why in asked:
                 self._record(link, rule, how, path, why)
         return found
+
+    def _record_shared_variables(self, chain, run_products) -> None:
+        """Keep each `SHAPE_PIN_SOURCE_<PRODUCT>` that is SET and that this
+        lookup passes over for a holder (#990), with the products that
+        share it, in `shared_variables`.
+
+        THE PRODUCTS THE LIBRARY'S GUARD IS ASKED OVER, and no others:
+        `link_pins_from_trees` passes over a variable two of `chain` and
+        `run_products` share (#275, #909), and `run_products` is what
+        `link_pins` hands it, nothing where the library takes no
+        `run_products=`. A library that predates them asks the guard over
+        the chain alone, and reads a variable a declared pin shares with
+        it, so saying that variable was read for none would be untrue.
+
+        A HOLDER, BECAUSE ONLY A HOLDER'S DECLARATION IS READ: a variable
+        only the chain's end shares decided nothing. An unset or empty
+        variable is read for no product (`resolve_link_source` asks only a
+        value), and is left unsaid, as before. Each product keeps the
+        spelling it was first given in, and a variable met again in a later
+        lookup adds only the products not named yet."""
+        holders = {pin_product_key(repo_basename(str(link)))
+                   for link in chain[:-1]}
+        guarded = [repo_basename(str(product))
+                   for product in (*chain, *run_products)]
+        for variable, group in pin_source_env_collisions(guarded).items():
+            if not (os.environ.get(variable) and holders.intersection(
+                    pin_product_key(product) for product in group)):
+                continue
+            named = self.shared_variables.setdefault(variable, [])
+            known = {pin_product_key(product) for product in named}
+            named.extend(product for product in group
+                         if pin_product_key(product) not in known)
 
     def _bare_path(self) -> Path | None:
         """The bare PATH for `link_pins_from_trees`, which asks it for a
@@ -303,11 +678,15 @@ class LinkSources:
             if why is None:
                 self.used.add(typed)
                 return
+            if rule == "bare" and self.label:
+                how = self.label
             links = self.unread.setdefault(typed, (path, how, why, []))[3]
         elif why is None or (rule == "sibling" and why in (
                 LINK_SOURCE_ABSENT, LINK_SOURCE_NO_MANIFEST)):
             return
         else:
+            # A checkout beside the project is named in `how` too (#661).
+            how = how.replace(str(path), _shown(path))
             links = self.unanswered.setdefault((path, how, why), [])
         if link not in links:
             links.append(link)
@@ -317,10 +696,10 @@ class LinkSources:
         or `""` — the only trace in the run of a mistyped link name. Nothing
         when no chain names a link: the note has already said so."""
         if self.reading.get(typed) is not None or "=" not in typed \
-                or not self.links:
+                or not self.links or self.label:
             return ""
         key = typed.partition("=")[0]
-        what = f"`{key}` is not" if key else "nothing before its `=` is"
+        what = f"`{_shown(key)}` is not" if key else "nothing before its `=` is"
         return (f"It was read as a PATH: {what} a link of a referent chain "
                 f"here (links: {', '.join(self.links)}).")
 
@@ -331,7 +710,8 @@ class LinkSources:
         `OSError` on every Python."""
         if self.reading.get(typed) is None or not os.path.isdir(typed):
             return ""
-        return (f"`{typed}` is also a directory; `--link-source ./{typed}` "
+        named = _shown(typed)
+        return (f"`{named}` is also a directory; `--link-source ./{named}` "
                 "reads it as one.")
 
     def unread_lines(self) -> list[str]:
@@ -346,14 +726,14 @@ class LinkSources:
                 continue
             path, how, why, links = self.unread[typed]
             lines.append(
-                f"link-source-unreadable: {path} ({how}) could not answer "
-                f"for {', '.join(links)}: {why}"
+                f"link-source-unreadable: {_shown(path)} ({how}) could not "
+                f"answer for {', '.join(links)}: {why}"
                 + "".join(f"\n  {line}" for line in (
                     self.read_as_path(typed), self._also_a_directory(typed))
                     if line))
         for (path, how, why), links in self.unanswered.items():
-            lines.append(f"link-source-unreadable: {path} ({how}) could not "
-                         f"answer for {', '.join(links)}: {why}")
+            lines.append(f"link-source-unreadable: {_shown(path)} ({how}) "
+                         f"could not answer for {', '.join(links)}: {why}")
         return lines
 
     def no_path_refusal(self) -> str:
@@ -361,7 +741,7 @@ class LinkSources:
         each by the link it is keyed to, or `""` when there is none."""
         if not self.no_path:
             return ""
-        said = [f"`--link-source {typed}` names no path for "
+        said = [f"`--link-source {_shown(typed)}` names no path for "
                 f"{self.reading[typed]}" if typed
                 else "`--link-source ''` names no path"
                 for typed in self.no_path]
@@ -380,7 +760,8 @@ class LinkSources:
             return ("a bare PATH is one first link's tree, and the chains "
                     "read here begin at " + ", ".join(self.firsts.values())
                     + ": name the link it is, as --link-source <link>=PATH")
-        sources = ("a more specific source (a keyed --link-source, "
+        keyed = "" if self.label else "a keyed --link-source, "
+        sources = (f"a more specific source ({keyed}"
                    "SHAPE_PIN_SOURCE_<PRODUCT>, or a checkout beside the "
                    "project)")
         if self.asked <= set(self.firsts):
@@ -394,14 +775,18 @@ class LinkSources:
         name records a chain, none reads a link's declaration, or the one
         link a bare PATH answers for had a more specific source
         (`_not_asked_why`). A value holding `=` that was read as a PATH says
-        so too."""
+        so too. Then a NOTE for each `--link-remedy` no holder used
+        (`_unused_remedy_lines`), and one for each variable that is set and
+        was read for no link because products of the run share it
+        (`_shared_variable_lines`, #990)."""
         lines = []
         for typed, link in self.reading.items():
             if typed in self.used or typed in self.unread:
                 continue
+            flag = self._flag(link)
             later = self.replaced.get(typed)
             if later is not None:
-                why = f"the later `--link-source {later}` replaced it"
+                why = f"the later `{flag} {_shown(later)}` replaced it"
             elif link is not None:
                 why = f"no name classified here reads {link}'s own declaration"
             elif not self.links:
@@ -412,9 +797,77 @@ class LinkSources:
             else:
                 why = self._not_asked_why()
             lines.append(" ".join(filter(None, (
-                f"--link-source {typed}: not used — {why}.",
+                f"{flag} {_shown(typed)}: not used — {why}.",
                 self.read_as_path(typed)))))
+        return (lines + self._unused_remedy_lines()
+                + self._shared_variable_lines())
+
+    def _shared_variable_lines(self) -> list[str]:
+        """One `link-source-collides` NOTE for each variable
+        `_record_shared_variables` kept (#990): it is set, the products of
+        the run that share it, that it is read for none of them, and what
+        reads a link's own tree here instead, the gate's words for a link
+        whose variable is shared (`_chain_link_findings`). A NOTE, so it
+        fails nothing and `--quiet` drops it, as it drops every NOTE. A
+        product is named as `_shown` spells it, so the NOTE is one line.
+
+        NOTHING IS SAID UNDER A LABEL, as `_unused_remedy_lines` says
+        nothing there: a caller that passes `--link-source-label` speaks for
+        someone else, in its own sources. Setup's step (4) speaks for the
+        scaffold, which #990 leaves out: it asks the guard over its one
+        chain and no `run_products`, so it reads a variable this run passed
+        over for a declared pin's sake, and it takes no `--link-source` and
+        reads no sibling checkout, the two this NOTE would offer."""
+        if self.label:
+            return []
+        lines = []
+        for variable, products in self.shared_variables.items():
+            named = [_shown(product) for product in products]
+            lines.append(
+                f"link-source-collides: {variable} is set, but "
+                f"{', '.join(named[:-1])} and {named[-1]}, products this run "
+                "reads, share it: it cannot say which it holds, so it is "
+                "read for none of them. A link's own tree is read from a "
+                "sibling checkout or --link-source <link>=<path>.")
         return lines
+
+    def _unused_remedy_lines(self) -> list[str]:
+        """A NOTE for each `--link-remedy` no holder used (#907), named as
+        typed, with why: a later value for its link replaced it, no chain
+        here names its link, or no name classified here reads that link's
+        own declaration, so no lookup asked for the tree the words are
+        about. A holder that was asked used its words, whether its tree
+        answered or not: the words are offered only where it did not, and
+        that is the disk's answer, not a mistake in the value.
+
+        NOTHING IS SAID UNDER A LABEL. A caller that passes
+        `--link-source-label` speaks for someone else (#661), and its
+        remedies are its own words: setup's step (4) passes one per holder
+        of the chain it hands over, and a NOTE would name `--link-remedy`,
+        a flag the person never typed and setup does not take."""
+        if self.label:
+            return []
+        lines = []
+        for typed, link in self.remedy_reading.items():
+            later = self.remedy_replaced.get(typed)
+            if later is None and pin_product_key(link) in self.asked:
+                continue
+            if later is not None:
+                why = f"the later `--link-remedy {_shown(later)}` replaced it"
+            elif not self.links:
+                why = "no name classified here records a referent chain"
+            elif pin_product_key(link) not in self.names:
+                why = (f"`{_shown(link)}` is not a link of a referent chain "
+                       f"here (links: {', '.join(self.links)})")
+            else:
+                why = f"no name classified here reads {link}'s own declaration"
+            lines.append(f"--link-remedy {_shown(typed)}: not used — {why}.")
+        return lines
+
+    def _flag(self, link: str | None) -> str:
+        """The flag a value is named by: `--link-source`, or for a bare
+        PATH the caller's label where it gave one (#661)."""
+        return self.label if link is None and self.label else "--link-source"
 
 
 def _no_family_lines(policy: NamingPolicy, name: str) -> list[str]:
@@ -424,11 +877,12 @@ def _no_family_lines(policy: NamingPolicy, name: str) -> list[str]:
     one question, answered once, so the per-family row below never has to
     guard against a `found` that does not exist.
     """
-    lines = [f"  {name}: NO FAMILY"]
+    lines = [f"  {spelled(name)}: NO FAMILY"]
     lines.append(f"    the {len(policy.families)} families are: " + ", ".join(
         f["id"] for f in policy.families))
     for family in policy.families:
-        lines.append(f"    {family['id']:<18} {family['pattern']}")
+        lines.append(f"    {_family_id_padded(family['id'])} "
+                     f"{family['pattern']}")
     return lines
 
 
@@ -465,7 +919,7 @@ def _referent_claim_note(policy: NamingPolicy, family: dict, name: str) -> str:
     (2026-09-05).
     """
     return (" [a CLAIM: needs a declared pin on " + " or ".join(
-        policy.descendant_referents(name))
+        map(spelled, policy.descendant_referents(name)))
         + ", or a declared chain (`"
         + str(policy.chain_rule().get("record_field")
               or CHAIN_RECORD_FIELD)
@@ -552,7 +1006,8 @@ def _family_row(policy: NamingPolicy, family: dict, matches: list,
     mark = "MATCH " if hits else "      "
     role_note, claim = _family_claim_and_role_note(
         policy, family, hits, role, name, found)
-    return f"    {mark}{family['id']:<18} {family['pattern']}{role_note}{claim}"
+    return (f"    {mark}{_family_id_padded(family['id'])} {family['pattern']}"
+            f"{role_note}{claim}")
 
 
 def _referent_lines(target: Target, matches: list,
@@ -568,9 +1023,9 @@ def _referent_lines(target: Target, matches: list,
         lines.append("    CHAIN " + " → ".join(target.chain)
                      + f"   [{found.referent.status}]")
     for warning in found.referent.warnings:
-        lines.append("    WARNING " + warning)
+        lines.append("    WARNING " + spelled(warning))
     if len(matches) > 1:
-        lines.append("    OVERLAP " + found.reason)
+        lines.append("    OVERLAP " + spelled(found.reason))
         lines.append("    also_matches: " + ", ".join(found.also_matches))
     return lines
 
@@ -588,7 +1043,8 @@ def _describe(policy: NamingPolicy, target: Target, link_pins: dict) -> list[str
     if not matches:
         return _no_family_lines(policy, name)
     found = policy.classify(name, role, pins, target.chain, link_pins)
-    lines = [f"  {name}: {found[0]}" + (f" / {found[1]}" if found[1] else "")]
+    lines = [f"  {spelled(name)}: {found[0]}"
+             + (f" / {found[1]}" if found[1] else "")]
     for family in policy.families:
         lines.append(_family_row(policy, family, matches, role, name, found))
     lines.extend(_referent_lines(target, matches, found))
@@ -608,11 +1064,16 @@ def _pins_from_project(data: dict) -> set[str]:
     ended this gate, the first command of `make validate`, in a `TypeError`;
     a scalar `openXdox` was read as the pins `X`, `d`, `e`, `n`, `o`, `p`,
     `x`, and a mapping as its keys, and the names classified, exit 0.
+
+    AN ENTRY THAT IS NOT A NAME DECLARES NOTHING (#714), and the others are
+    still declared, as `validate-pins.py` checks the rest past an entry it
+    calls malformed. `_not_a_name` is the rule, and `_pins_field_findings`
+    names each such entry.
     """
     declared = data.get("neutral_product_pins")
     if not isinstance(declared, list):
         return set()
-    return {str(pin) for pin in declared if pin}
+    return {pin for pin in declared if _not_a_name(pin) is None}
 
 
 def _pins_field_findings(data: dict) -> list[str]:
@@ -621,12 +1082,22 @@ def _pins_field_findings(data: dict) -> list[str]:
     names the field where it used to end in a traceback, and every validator
     that reads the field says the same sentence. Absent or null declares no
     pin and is no finding; anything else that is not a list is one, `0`,
-    `false` and `''` included, as that validator says."""
+    `false` and `''` included, as that validator says. In a list, each
+    entry that is not a name is one too, with why (#714)."""
     declared = data.get("neutral_product_pins")
-    if declared is None or isinstance(declared, list):
+    if declared is None:
         return []
-    return [f"manifest-neutral-product-pins: neutral_product_pins is "
-            f"{declared!r}, expected a list of neutral product names"]
+    if not isinstance(declared, list):
+        return [f"manifest-neutral-product-pins: neutral_product_pins is "
+                f"{declared!r}, expected a list of neutral product names"]
+    findings = []
+    for pin in declared:
+        why = _not_a_name(pin)
+        if why is not None:
+            findings.append(
+                f"manifest-neutral-product-pins: neutral_product_pins entry "
+                f"{pin!r} is not a neutral product name: {why}")
+    return findings
 
 
 def _chain_from_leg(leg: dict) -> tuple:
@@ -641,32 +1112,54 @@ def _chain_from_leg(leg: dict) -> tuple:
     no chain, which `_chain_field_findings` reports. This copy had the string
     rule and not the list rule, so `5`, `true` or `1.5` ended the gate in a
     `TypeError` and a mapping was read as a chain of its keys.
+
+    A CHAIN WITH A LINK THAT IS NOT A NAME RECORDS NO CHAIN (#714), as one
+    that is not a list records none: `_not_a_name` is the rule, and
+    `_chain_field_findings` names the link. `[5]` was the link `'5'`, and
+    `"\\x1b[31mRED"` a link this gate classified with, exit 0. Dropping the
+    one link would ask about a chain nobody recorded. A blank string is the
+    empty record it always was.
     """
     naming = leg.get("naming")
     if not isinstance(naming, dict):
         return ()
     recorded = naming.get(CHAIN_RECORD_FIELD)
     if isinstance(recorded, str):
-        recorded = [recorded]
-    if not isinstance(recorded, list):
+        recorded = [recorded] if recorded.strip() else []
+    if not isinstance(recorded, list) or any(
+            _not_a_name(link) is not None for link in recorded):
         return ()
-    return tuple(str(link) for link in recorded if str(link).strip())
+    return tuple(recorded)
 
 
 def _chain_field_findings(leg: dict) -> list[str]:
     """`validate-manifest.py`'s finding for a leg's `naming.referent_chain:`
     that is neither a string nor a list, in its words (#443): the leg named
     by its declared `role:`, as that validator names it. Absent or null
-    records no chain, and a string is one link, so neither is a finding."""
+    records no chain, and a string is one link, so neither is a finding.
+    Each link that is not a name is one, with why (#714); a blank string is
+    no link and no finding."""
     naming = leg.get("naming")
     if not isinstance(naming, dict):
         return []
     recorded = naming.get(CHAIN_RECORD_FIELD)
-    if recorded is None or isinstance(recorded, (str, list)):
+    if recorded is None:
         return []
-    return [f"naming-referent-chain: leg {leg.get('role')!r}: "
-            f"{CHAIN_RECORD_FIELD} is {recorded!r}, expected a list of "
-            "neutral-product names"]
+    if isinstance(recorded, str):
+        recorded = [recorded] if recorded.strip() else []
+    if not isinstance(recorded, list):
+        return [f"naming-referent-chain: leg {leg.get('role')!r}: "
+                f"{CHAIN_RECORD_FIELD} is {recorded!r}, expected a list of "
+                "neutral-product names"]
+    findings = []
+    for link in recorded:
+        why = _not_a_name(link)
+        if why is not None:
+            findings.append(
+                f"naming-referent-chain: leg {leg.get('role')!r}: "
+                f"{CHAIN_RECORD_FIELD} link {link!r} is not a neutral-product "
+                f"name: {why}")
+    return findings
 
 
 def _leg_target(policy: NamingPolicy, path: Path, leg, root: Path,
@@ -679,9 +1172,20 @@ def _leg_target(policy: NamingPolicy, path: Path, leg, root: Path,
     walks every leg in the manifest. `(None, [finding])` is a leg with no
     `repository:` to classify at all — the same case the loop's own `finding`
     list has always carried, now returned instead of appended in place.
+
+    AN ENTRY THAT IS NOT A MAPPING IS `validate-manifest.py`'S `manifest-leg`
+    FINDING, in its words (#714), as `validate-pins.py` says it too: `5`
+    was "a leg has no `repository:`", which is not what is wrong with it. A
+    mapping with no `repository:` still says that, and names the manifest
+    relative to the project root, spelled by `_shown`: the `--project` path
+    was printed raw, as given, and the doctor gives it as its root joined
+    to `project.yaml`.
     """
-    if not isinstance(leg, dict) or "repository" not in leg:
-        return None, [f"{path}: a leg has no `repository:`"]
+    if not isinstance(leg, dict):
+        return None, [f"manifest-leg: a leg is not a mapping: {leg!r}"]
+    if "repository" not in leg:
+        manifest = _shown(path.resolve().relative_to(root).as_posix())
+        return None, [f"{manifest}: a leg has no `repository:`"]
     name = repo_basename(str(leg["repository"]))
     declared = leg.get("role")
     declared = str(declared) if declared else None
@@ -697,14 +1201,14 @@ def _leg_target(policy: NamingPolicy, path: Path, leg, root: Path,
     # true by declaring it.
     if found and found[0] == "project-leg" and declared and found[1] != declared:
         findings.append(
-            f"{name}: declared role {declared!r} but the name is the "
-            f"{found[1]!r} form of the project-leg family"
+            f"{spelled(name)}: declared role {declared!r} but the name is "
+            f"the {found[1]!r} form of the project-leg family"
         )
     # A RECORDED chain that does not hold is drift in the record, and the
     # finding names the link. Unverified is not this: it is a warning,
     # printed by the caller, and never an exit code.
     if found and found.referent.status == "broken":
-        findings.append(f"{name}: {found.referent.reason}")
+        findings.append(spelled(f"{name}: {found.referent.reason}"))
     return target, findings
 
 
@@ -729,11 +1233,44 @@ def _project_manifest(path: Path) -> dict:
     return data
 
 
+def _project_legs(data: dict) -> list:
+    """The manifest's `legs:` where it is a list, and `[]` where it is not
+    (#714): a value that is not a list names no leg, as
+    `validate-manifest.py` reads it, and `_legs_field_findings` says so.
+    Iterated as `data.get("legs") or []`, `5` or `true` ended the gate in a
+    `TypeError` before any name was classified, and a scalar `openXdox` or
+    a mapping was walked one character, or one key, at a time: no leg was a
+    target, and the gate read names from stdin instead, which waited on a
+    pipe left open."""
+    legs = data.get("legs")
+    return legs if isinstance(legs, list) else []
+
+
+def _legs_field_findings(data: dict) -> list[str]:
+    """`validate-manifest.py`'s finding for a `legs:` that is not a list, or
+    that is absent, null or `[]`, in its words (#714); `validate-pins.py`
+    says the first too.
+
+    A MANIFEST THAT NAMES NO LEG IS THAT FINDING, NOT `naming-no-target`
+    (lane 4's ruling on #714). The refusal said "Pass names, `--project
+    project.yaml`, or names on stdin" to a run that had passed
+    `--project project.yaml`, and under `--project` this gate no longer
+    reads stdin, so two of its three offers were no way out. The manifest
+    is what is wrong, and `validate-manifest.py` says so, exit 1."""
+    legs = data.get("legs")
+    if isinstance(legs, list) and legs:
+        return []
+    if legs is None or isinstance(legs, list):
+        return ["manifest-legs: legs is missing or empty"]
+    return [f"manifest-legs: legs is {legs!r}, expected a list of `role:`, "
+            "`repository:` and `path:` mappings"]
+
+
 def _project_leg_chains(data: dict) -> list[tuple[str, tuple]]:
     """`(name, the chain it records)` for each leg `_leg_target` makes a
     target of, and no other."""
     return [(repo_basename(str(leg["repository"])), _chain_from_leg(leg))
-            for leg in data.get("legs") or []
+            for leg in _project_legs(data)
             if isinstance(leg, dict) and "repository" in leg]
 
 
@@ -775,9 +1312,11 @@ def _targets_from_project(policy: NamingPolicy, path: Path, data: dict,
     root = path.resolve().parent
     targets: list[Target] = []
     # Pins that are not a list are said before any leg's finding, and every
-    # leg is classified as declaring none (#443).
+    # leg is classified as declaring none (#443). Legs that are not a list
+    # are said next, and name no leg (#714).
     findings: list[str] = _pins_field_findings(data)
-    for leg in data.get("legs") or []:
+    findings.extend(_legs_field_findings(data))
+    for leg in _project_legs(data):
         target, leg_findings = _leg_target(policy, path, leg, root, pins,
                                            sources)
         if target is not None:
@@ -795,9 +1334,39 @@ def _targets_from_stdin(role: str | None, pins: set, chain: tuple,
 
     Split from `main` for #136: reading the stdin fallback is its own
     question, asked only once `main` has decided no other source answered.
+
+    A BYTE THAT IS NOT UTF-8 IS READ AS THE NAME ARGV READS (#714). A
+    `strict` stdin, which `PYTHONIOENCODING=utf-8` gives (the doctor sets it
+    for its children), ended the run in a `UnicodeDecodeError` on
+    `Atl\\xffas`; read with `surrogateescape`, as `os.fsdecode` reads an
+    argument, it is `Atl\\udcffas` and reaches `naming-unclassified`. Any
+    other handler, one somebody chose, is left alone.
     """
+    if getattr(sys.stdin, "errors", None) == "strict":
+        try:
+            sys.stdin.reconfigure(errors="surrogateescape")
+        except (AttributeError, ValueError, OSError):
+            pass
     return [Target(repo_basename(line.strip()), role, pins, chain, here)
             for line in sys.stdin if line.strip()]
+
+
+def _escape_what_stdout_cannot_encode() -> None:
+    """A character stdout cannot encode is printed escaped (#714), as
+    `validate-pins.py`'s `_emit_report` prints it (#295): a `strict` or
+    `surrogateescape` stdout, the two that raise, becomes
+    `backslashreplace`, the handler stderr already has, and any other
+    handler is left alone. A name that is not UTF-8 (`Atl\\udcffas`, from
+    the byte `\\xff`) ended `--explain` and the plain listing in a
+    `UnicodeEncodeError` under `PYTHONIOENCODING=utf-8`, which the doctor
+    gives its children, where `--quiet` said `naming-unclassified`. This
+    script runs on its own too, so the doctor setting another handler for
+    its child would not be enough."""
+    if getattr(sys.stdout, "errors", None) in ("strict", "surrogateescape"):
+        try:
+            sys.stdout.reconfigure(errors="backslashreplace")
+        except (AttributeError, ValueError, OSError):
+            pass
 
 
 def _print_classification(name: str, found: Classification | None) -> None:
@@ -817,7 +1386,9 @@ def _print_classification(name: str, found: Classification | None) -> None:
         label = found[0] + role_suffix
     also = f"   also_matches {','.join(found.also_matches)}" \
         if found and found.also_matches else ""
-    print(f"  {name:<32} {label}{also}")
+    # Padded by the columns the name takes as stdout writes it (#1217), so
+    # a wide or combining name's label starts under every other row's.
+    print(f"  {_padded(_printed(spelled(name)), 32)} {label}{also}")
 
 
 def _classify_targets(policy: NamingPolicy, targets: list, args,
@@ -841,7 +1412,7 @@ def _classify_targets(policy: NamingPolicy, targets: list, args,
         elif not args.quiet:
             _print_classification(name, found)
         if found:
-            warnings.extend(f"{name}: {text}"
+            warnings.extend(spelled(f"{name}: {text}")
                             for text in found.referent.warnings)
         else:
             unclassified.append(name)
@@ -878,7 +1449,7 @@ def _emit_reports(args, unclassified: list[str], warnings: list[str],
     if unclassified:
         print(
             "FINDING naming-unclassified: "
-            + ", ".join(unclassified)
+            + ", ".join(map(spelled, unclassified))
             + "\n  These names match none of the families in "
             + str(args.policy)
             + ".\n  A project's three repositories are `<Project>`, "
@@ -921,14 +1492,16 @@ def main(argv: list[str] | None = None) -> int:
                         help="where a chain LINK's own tree is, so its "
                              "`neutral_product_pins:` can be read and the "
                              "link VERIFIED — e.g. --link-source "
-                             "openXdox=../openXdox. The text before the "
-                             "first `=` is a PRODUCT only when it names a "
-                             "chain link (an entry of --referent-chain, or "
-                             "of a leg's naming.referent_chain: under "
-                             "--project), and then that reading wins even "
-                             "over a directory spelled like the whole value "
-                             "(./PATH reads that directory); any other value "
-                             "is a bare PATH: the tree of the chain's FIRST "
+                             "openXdox=../openXdox. The text before an `=` "
+                             "is a PRODUCT only when it names a chain link "
+                             "(an entry of --referent-chain, or of a leg's "
+                             "naming.referent_chain: under --project), and "
+                             "the longest such text that leaves a path "
+                             "after it is the one read, so a link may hold "
+                             "`=`; that reading wins even over a directory "
+                             "spelled like the whole value (./PATH reads "
+                             "that directory); any other value is a bare "
+                             "PATH: the tree of the chain's FIRST "
                              "link (the pin the project holds), read when "
                              "that link has no more specific answer, and "
                              "never a later link's, which needs its own "
@@ -947,11 +1520,30 @@ def main(argv: list[str] | None = None) -> int:
                              "a source that cannot be read is named with the "
                              "system's reason: both are warnings and not "
                              "findings, an explicit source included.")
+    parser.add_argument("--link-source-label", default=None,
+                        metavar="FLAG",
+                        help="the caller's own name for the bare "
+                             "--link-source it passes, such as --pin-source "
+                             "(a FLAG that starts with - is given after an "
+                             "=): the link-source-unreadable WARNING and the "
+                             "not-used NOTE name that value by FLAG, and "
+                             "neither says a value holding = was read as a "
+                             "PATH")
+    parser.add_argument("--link-remedy", action="append", default=[],
+                        type=_link_remedy, metavar="LINK=TEXT",
+                        help="the caller's words for what would let LINK's "
+                             "tree be read, offered in place of this "
+                             "script's own where that link is "
+                             "declared-unverified. Repeatable; the last "
+                             "value for a link wins, and a value no holder "
+                             "used is noted (with --link-source-label, it "
+                             "is not).")
     parser.add_argument("--explain", action="store_true",
                         help="print every family each name satisfies, why one "
                              "of them won, and what the others are recorded as")
     parser.add_argument("--quiet", action="store_true")
     args = parser.parse_args(argv)
+    _escape_what_stdout_cannot_encode()
 
     try:
         policy = NamingPolicy.load(args.policy)
@@ -978,7 +1570,8 @@ def main(argv: list[str] | None = None) -> int:
     # reads is known and before any name is classified (#338, #441).
     sources = LinkSources(args.link_source, [
         *cli_chain, *(_project_chain_links(data) if data is not None
-                      else ())], _first_links_read(policy, targets, data))
+                      else ())], _first_links_read(policy, targets, data),
+        args.link_source_label, args.link_remedy)
     if sources.no_path:
         print(sources.no_path_refusal(), file=sys.stderr)
         return 2
@@ -986,9 +1579,18 @@ def main(argv: list[str] | None = None) -> int:
         extra, findings = _targets_from_project(policy, args.project, data,
                                                 sources)
         targets.extend(extra)
-    if not targets and not sys.stdin.isatty():
+    # UNDER `--project`, STDIN IS NEVER READ (#714). The manifest is the
+    # question; a manifest that names no leg, or whose `legs:` is not a
+    # list, read names from a stdin that is not a terminal, and a pipe left
+    # open (a parent that holds it) made the gate wait forever.
+    # A finding with no name to classify is still said, exit 1, and under
+    # `--project` a run with no target always has one (`legs:` missing,
+    # empty or not a list, or a leg with no `repository:`): the
+    # `no names given` refusal is for a run without `--project` that found
+    # nothing to ask.
+    if not targets and data is None and not sys.stdin.isatty():
         targets = _targets_from_stdin(args.role, cli_pins, cli_chain, here)
-    if not targets:
+    if not targets and not findings:
         print("REFUSED naming-no-target: no names given. Pass names, "
               "`--project project.yaml`, or names on stdin.", file=sys.stderr)
         return 2
