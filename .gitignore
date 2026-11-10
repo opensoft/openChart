@@ -3,3 +3,7 @@ __pycache__/
 .venv/
 var/
 sites/
+
+/spec/
+/code/
+/worktrees/
