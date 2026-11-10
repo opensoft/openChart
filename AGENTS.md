@@ -1,3 +1,5 @@
+Read AGENTS-shape.md first -- the rules of this repository shape.
+
 # Agent Instructions
 
 <!-- OPENSPEC-SPECKIT-GLOBAL:START -->
@@ -34,3 +36,8 @@ copy or fork OpenEMR or Marley implementation code.
 The repository is at governance-scaffold stage. There are no Frappe runtime,
 build, migration, or test commands yet. Add those commands here when the first
 governed implementation establishes them.
+
+## Triad layout
+
+Specifications and contracts are in spec/. Implementation and tests are in code/.
+Run make validate from this assembly root. Live evidence is written under spec/specs/.

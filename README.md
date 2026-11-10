@@ -113,7 +113,24 @@ records, wallet secrets, or encryption keys to this repository.
 
 ## Recovered live QA tools
 
-[Persistent synthetic QA procedure](docker/QA.md) and
-[historical p4 scenario record](specs/001-expanded-patient-intake/scenario-live-half.md).
+[Persistent synthetic QA procedure](code/docker/QA.md) and
+[historical p4 scenario record](spec/specs/001-expanded-patient-intake/scenario-live-half.md).
 The August 2026 evidence is retained as captured; recovery is not a new live
 acceptance result. Run `uv run scripts/run_p4_live.py --self-test` offline.
+
+
+## Triad development
+
+Clone recursively and run `make bootstrap`, then `make validate`.
+The assembly pins [openChart-spec](https://github.com/opensoft/openChart-spec)
+at `spec/` and [openChart-code](https://github.com/opensoft/openChart-code)
+at `code/`. Contracts live in `spec/contracts/`. The root exports
+`CONTRACTS_DIR` for code validation. Live evidence is written under `spec/specs/`.
+
+The maintained shape targets are included from `shape/Makefile`.
+`make validate` runs shape checks and the content suite.
+`make validate-docker` runs the Frappe integration environment.
+
+See [the adoption proposal](spec/openspec/changes/adopt-openchart-triad/proposal.md)
+and [implementation tasks](spec/specs/002-triad-adoption/tasks.md).
+Historical single-repository worktrees retain their original commits.
