@@ -21,7 +21,7 @@ leg_role: code
 source_repository: opensoft/openChart-code
 submodule_path: "code"
 
-commit: "08f6e042b342501182c600c41fe39d82c397555d"
+commit: "30b96459924f548d929f3468609652218adf77e0"
 revision_kind: commit
 
 digest_algorithm: sha256
