@@ -21,7 +21,7 @@ interoperability surfaces.
 It does not own billing, claims, revenue cycle, or general practice
 operations; those belong to [openPractice](https://github.com/opensoft/openPractice).
 Medx-specific scenario, evidence, authority, and decision workflows belong to
-[MedxEHR](https://github.com/opensoft/MedxEHR), which will extend openChart.
+MedxEHR, which will extend openChart.
 
 ## Original implementation
 
@@ -157,8 +157,16 @@ records, wallet secrets, or encryption keys to this repository.
 [Persistent synthetic QA procedure](code/docker/QA.md) and
 [historical p4 scenario record](spec/specs/001-expanded-patient-intake/scenario-live-half.md).
 The August 2026 evidence is retained as captured; recovery is not a new live
-acceptance result. From this root, run
-`uv run code/scripts/run_p4_live.py --self-test` offline.
+acceptance result.
+
+The live runner is `code/scripts/run_p4_live.py`. From this root, run
+`uv run code/scripts/run_p4_live.py --self-test` for its offline check; from
+`code/`, the same script is `uv run scripts/run_p4_live.py`. A live run writes
+its evidence record under
+`spec/specs/001-expanded-patient-intake/live-evidence/<run-id>/`, inside the
+`spec/` leg, and its raw request log under `code/var/p4-live/<run-id>/`, which
+is git-ignored. The QA procedure above covers the credentials and the
+standalone-clone variant.
 
 ## Triad development
 
