@@ -21,7 +21,7 @@ leg_role: code
 source_repository: opensoft/openChart-code
 submodule_path: "code"
 
-commit: "2a680d1886b0eefddb1d573bcc83028472b2de22"
+commit: "7c762a0230135a68756e735ab648b74434e4af5f"
 revision_kind: commit
 
 digest_algorithm: sha256
@@ -36,7 +36,7 @@ digest_algorithm: sha256
 # <oid>`, so a leg's own pin moving is drift too.
 digest_definition: sorted-ls-tree-r-v1
 digests:
-  tree_sha256: "19b745c9fbac932c77532026e900368fa4277e2c509c7d830917499890a00126"
+  tree_sha256: "a29bd456459e6500b012fdde3c4f1a8e203390f4afaaae1b9ae6228603a4a067"
 
 verify_pin: scripts/validate-pins.py
 resync_runbook: "README.md#the-lockstep-invariant"
